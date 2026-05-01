@@ -42,8 +42,8 @@ export class CommentsService {
     // Add assignees
     if (task.assignedTo) {
       const assignee: any = task.assignedTo as any;
-      const id = assignee._id?.toString() || assignee.toString();
-      if (id !== currentUser.id) notificationTargets.add(id);
+      const id = assignee?._id?.toString() || assignee?.toString();
+      if (id && id !== currentUser.id) notificationTargets.add(id);
     }
 
     // Add creator
