@@ -31,18 +31,28 @@ export class UsersController {
     private readonly rolesService: RolesService,
   ) { }
 
-  @JwtAuthGuard()
-  @Get('me')
-  async getMe(
-    @CurrentUser() user: { id: string },
-  ): Promise<SingleUserResponseDto> {
-    const userData = await this.usersService.getUserById(user.id);
-    return {
-      success: true,
-      data: userData,
-      message: 'User retrieved successfully',
-    };
-  }
+   @JwtAuthGuard()
+   @Get('me')
+   async getMe(
+     @CurrentUser() user: { id: string },
+   ): Promise<SingleUserResponseDto> {
+     const userData = await this.usersService.getUserById(user.id);
+     // Compute full permissions from both roles and direct assignments
+     const permissions = await this.rolesService.getPermissionsForRoles(userData.roles);
+     const directPermissions = userData.permissions || [];
+     
+     // Combine: role permissions + direct permissions (with deduplication)
+     const combinedPermissions = Array.from(new Set([...permissions, ...directPermissions]));
+     
+     return {
+       success: true,
+       data: {
+         ...userData,
+         permissions: combinedPermissions,
+       },
+       message: 'User retrieved successfully',
+     };
+   }
 
   @authorize(Permissions.USERS_ASSIGN_ROLES)
   @Patch(':id/roles')
@@ -159,16 +169,30 @@ export class UsersController {
     };
   }
 
-  @authorize(Permissions.USERS_VIEW)
-  @Get('team/:teamId')
-  async getUsersByTeam(
-    @Param('teamId') teamId: string,
-  ): Promise<UserListResponseDto> {
-    const users = await this.usersService.getUsersByTeam(teamId);
-    return {
-      success: true,
-      data: users,
-      message: 'Users retrieved by team',
-    };
-  }
+   @authorize(Permissions.USERS_VIEW)
+   @Get('team/:teamId')
+   async getUsersByTeam(
+     @Param('teamId') teamId: string,
+   ): Promise<UserListResponseDto> {
+     const users = await this.usersService.getUsersByTeam(teamId);
+     return {
+       success: true,
+       data: users,
+       message: 'Users retrieved by team',
+     };
+   }
+
+   @authorize(Permissions.USERS_UPDATE)
+   @Patch(':id/permissions')
+   async updateUserPermissions(
+     @Param('id') id: string,
+     @Body() body: { permissions: string[] },
+   ): Promise<SingleUserResponseDto> {
+     const user = await this.usersService.updateUserPermissions(id, body.permissions);
+     return {
+       success: true,
+       data: user,
+       message: 'User permissions updated successfully',
+     };
+   }
 }

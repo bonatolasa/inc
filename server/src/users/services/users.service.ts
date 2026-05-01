@@ -206,40 +206,58 @@ export class UsersService {
     return stats;
   }
 
-  async assignRoles(userId: string, roles: string[]): Promise<UserResponseDto> {
-    const user = await this.userModel.findById(userId).exec();
-    if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
-    }
+   async assignRoles(userId: string, roles: string[]): Promise<UserResponseDto> {
+     const user = await this.userModel.findById(userId).exec();
+     if (!user) {
+       throw new NotFoundException(`User with ID ${userId} not found`);
+     }
 
-    const normalizedRoles = roles.map((r) => r.toLowerCase().trim().replace(/\s+/g, '_'));
-    
-    user.roles = normalizedRoles;
-    await user.save();
+     const normalizedRoles = roles.map((r) => r.toLowerCase().trim().replace(/\s+/g, '_'));
+     
+     user.roles = normalizedRoles;
+     await user.save();
 
-    return this.mapToResponseDto(user);
-  }
+     return this.mapToResponseDto(user);
+   }
 
-  private mapToResponseDto(user: User): UserResponseDto {
-    let teamId: string | undefined;
-    if (user.team) {
-      if ((user.team as any)._id) {
-        teamId = (user.team as any)._id.toString();
-      } else {
-        teamId = user.team.toString();
-      }
-    }
+   async updateUserPermissions(userId: string, permissions: string[]): Promise<UserResponseDto> {
+     const user = await this.userModel.findById(userId).exec();
+     if (!user) {
+       throw new NotFoundException(`User with ID ${userId} not found`);
+     }
 
-    return {
-      id: user._id.toString(),
-      name: user.name,
-      email: user.email,
-      roles: user.roles,
-      team: teamId,
-      isActive: user.isActive,
-      lastLogin: user.lastLogin,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
-  }
+     // Normalize permissions (remove duplicates, empty strings)
+     const normalizedPermissions = Array.from(new Set(
+       permissions.map(p => p.trim()).filter(p => p)
+     ));
+
+     user.permissions = normalizedPermissions;
+     await user.save();
+
+     return this.mapToResponseDto(user);
+   }
+
+   private mapToResponseDto(user: User): UserResponseDto {
+     let teamId: string | undefined;
+     if (user.team) {
+       if ((user.team as any)._id) {
+         teamId = (user.team as any)._id.toString();
+       } else {
+         teamId = user.team.toString();
+       }
+     }
+
+     return {
+       id: user._id.toString(),
+       name: user.name,
+       email: user.email,
+       roles: user.roles,
+       permissions: user.permissions || [],
+       team: teamId,
+       isActive: user.isActive,
+       lastLogin: user.lastLogin,
+       createdAt: user.createdAt,
+       updatedAt: user.updatedAt,
+     };
+   }
 }
