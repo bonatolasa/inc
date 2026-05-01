@@ -13,6 +13,7 @@ import { ROLES_KEY } from '../decorators/roles.decorator';
 import { Role } from 'src/enums/role.enum';
 import { RolesService } from '../roles/roles.service';
 import { normalizeRoles } from '../utils/role.utils';
+import { Permissions } from '../constants/permissions.constants';
 
 interface AuthenticatedRequest {
   user?: {
@@ -87,12 +88,14 @@ export class PermissionsGuard implements CanActivate {
       normalizedRequiredRoles.length === 0 ||
       normalizedUserRoles.some((role) => normalizedRequiredRoles.includes(role));
 
-    let userPermissions = user.permissions || [];
-    if (!userPermissions.length && normalizedUserRoles.length > 0) {
-      userPermissions = await this.rolesService.getPermissionsForRoles(
-        normalizedUserRoles,
-      );
-    }
+     let userPermissions = user.permissions || [];
+     if (normalizedUserRoles.length > 0) {
+       const rolePermissions = await this.rolesService.getPermissionsForRoles(
+         normalizedUserRoles,
+       );
+       // Combine direct permissions and role-based permissions, removing duplicates
+       userPermissions = [...new Set([...userPermissions, ...rolePermissions])];
+     }
 
     const hasRequiredPermission =
       !requiredPermissions?.length ||
@@ -157,6 +160,24 @@ export class PermissionsGuard implements CanActivate {
     }
 
     if (contextConfig.check === 'task_access') {
+      const normalizedUserRoles = normalizeRoles(request.user?.roles || []);
+      const directPermissions = request.user?.permissions || [];
+      const testerPermissionSet = new Set([
+        Permissions.TASKS_TEST_UPDATE,
+        Permissions.TEST_TASK,
+        Permissions.REPORT_BUG,
+        Permissions.VERIFY_TASK,
+      ]);
+      const hasTesterRole = normalizedUserRoles.includes(Role.TESTER);
+      const hasTesterPermission = directPermissions.some((p) =>
+        testerPermissionSet.has(p as any),
+      );
+
+      // Testers can perform QA actions across tasks when authorized by role/permission.
+      if (hasTesterRole || hasTesterPermission) {
+        return true;
+      }
+
       const taskId = request.params?.[contextConfig.taskIdParam || 'id'];
       if (!taskId) return false;
 

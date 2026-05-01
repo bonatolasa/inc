@@ -1,0 +1,267 @@
+import React, { useState, useEffect } from 'react';
+import { Modal } from '../../../common/components';
+import { PERMISSIONS } from '../../../config/permissions.config';
+import { Check, Info } from 'lucide-react';
+
+interface UserPermissionsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  userName: string;
+  currentPermissions: string[];
+  onSave: (permissions: string[]) => Promise<void>;
+}
+
+const PERMISSION_GROUPS = {
+  USERS: {
+    label: 'User Management',
+    permissions: [
+      { key: PERMISSIONS.USERS_VIEW, label: 'View Users' },
+      { key: PERMISSIONS.USERS_CREATE, label: 'Create Users' },
+      { key: PERMISSIONS.USERS_UPDATE, label: 'Update Users' },
+      { key: PERMISSIONS.USERS_DELETE, label: 'Delete Users' },
+      { key: PERMISSIONS.USERS_ASSIGN_ROLES, label: 'Assign User Roles' },
+    ]
+  },
+  TEAMS: {
+    label: 'Team Management',
+    permissions: [
+      { key: PERMISSIONS.TEAMS_VIEW, label: 'View Teams' },
+      { key: PERMISSIONS.TEAMS_CREATE, label: 'Create Teams' },
+      { key: PERMISSIONS.TEAMS_UPDATE, label: 'Update Teams' },
+      { key: PERMISSIONS.TEAMS_DELETE, label: 'Delete Teams' },
+    ]
+  },
+  PROJECTS: {
+    label: 'Project Management',
+    permissions: [
+      { key: PERMISSIONS.PROJECTS_VIEW, label: 'View Projects' },
+      { key: PERMISSIONS.PROJECTS_CREATE, label: 'Create Projects' },
+      { key: PERMISSIONS.PROJECTS_UPDATE, label: 'Update Projects' },
+      { key: PERMISSIONS.PROJECTS_DELETE, label: 'Delete Projects' },
+    ]
+  },
+  TASKS: {
+    label: 'Task Management',
+    permissions: [
+      { key: PERMISSIONS.TASKS_VIEW, label: 'View Tasks' },
+      { key: PERMISSIONS.TASKS_CREATE, label: 'Create Tasks' },
+      { key: PERMISSIONS.TASKS_UPDATE, label: 'Update Tasks' },
+      { key: PERMISSIONS.TASKS_DELETE, label: 'Delete Tasks' },
+      { key: PERMISSIONS.TASKS_ASSIGN, label: 'Assign Tasks' },
+      { key: PERMISSIONS.TASKS_TEST_UPDATE, label: 'Legacy QA Task Update' },
+      { key: PERMISSIONS.TEST_TASK, label: 'Test Task' },
+      { key: PERMISSIONS.REPORT_BUG, label: 'Report Bug' },
+      { key: PERMISSIONS.VERIFY_TASK, label: 'Verify Task' },
+    ]
+  },
+  ROLES: {
+    label: 'Role & Permission Management',
+    permissions: [
+      { key: PERMISSIONS.ROLES_VIEW, label: 'View Roles' },
+      { key: PERMISSIONS.ROLES_CREATE, label: 'Create Roles' },
+      { key: PERMISSIONS.ROLES_UPDATE, label: 'Update Roles' },
+      { key: PERMISSIONS.ROLES_DELETE, label: 'Delete Roles' },
+      { key: PERMISSIONS.ROLES_ASSIGN_PERMISSIONS, label: 'Assign Permissions to Roles' },
+    ]
+  },
+  COMMENTS: {
+    label: 'Comments',
+    permissions: [
+      { key: PERMISSIONS.COMMENTS_CREATE, label: 'Create Comments' },
+      { key: PERMISSIONS.COMMENTS_VIEW, label: 'View Comments' },
+      { key: PERMISSIONS.COMMENTS_DELETE, label: 'Delete Comments' },
+    ]
+  },
+  ATTACHMENTS: {
+    label: 'Attachments',
+    permissions: [
+      { key: PERMISSIONS.ATTACHMENTS_UPLOAD, label: 'Upload Attachments' },
+      { key: PERMISSIONS.ATTACHMENTS_VIEW, label: 'View Attachments' },
+      { key: PERMISSIONS.ATTACHMENTS_DELETE, label: 'Delete Attachments' },
+    ]
+  },
+  REPORTS: {
+    label: 'Reports & Analytics',
+    permissions: [
+      { key: PERMISSIONS.REPORTS_VIEW, label: 'View Reports Dashboard' },
+      { key: PERMISSIONS.REPORTS_EXPORT, label: 'Export Reports' },
+    ]
+  },
+  SYSTEM: {
+    label: 'System',
+    permissions: [
+      { key: PERMISSIONS.PERMISSIONS_VIEW, label: 'View All Permissions' },
+      { key: PERMISSIONS.NOTIFICATIONS_VIEW, label: 'View Notifications' },
+    ]
+  }
+};
+
+const UserPermissionsModal: React.FC<UserPermissionsModalProps> = ({
+  isOpen,
+  onClose,
+  userName,
+  currentPermissions,
+  onSave
+}) => {
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedPermissions(currentPermissions || []);
+      setError(null);
+    }
+  }, [isOpen, currentPermissions]);
+
+  const persistPermissions = async (nextPermissions: string[]) => {
+    setSelectedPermissions(nextPermissions);
+    setIsSaving(true);
+    setError(null);
+    try {
+      await onSave(nextPermissions);
+    } catch (err) {
+      setSelectedPermissions(currentPermissions || []);
+      const message = err instanceof Error ? err.message : 'Failed to save permissions';
+      setError(message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleTogglePermission = async (permissionKey: string) => {
+    const nextPermissions = selectedPermissions.includes(permissionKey)
+      ? selectedPermissions.filter((p) => p !== permissionKey)
+      : [...selectedPermissions, permissionKey];
+
+    await persistPermissions(nextPermissions);
+  };
+
+  const handleClose = () => {
+    setSelectedPermissions(currentPermissions || []);
+    setError(null);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={handleClose} title={`Manage Permissions: ${userName}`}>
+      <div className="space-y-6">
+        {/* Info Banner */}
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3">
+          <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-blue-700">
+            <p className="font-bold mb-1">Hybrid RBAC System</p>
+            <p>These are <strong>direct permissions</strong> that will be added to this user's role-based permissions. This allows for exceptions and special access beyond their assigned roles.</p>
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+            {error}
+          </div>
+        )}
+
+        {/* Current Permissions Summary */}
+        <div className="p-4 bg-gray-50 rounded-xl">
+          <h4 className="text-sm font-bold text-gray-700 mb-2">Currently Assigned Direct Permissions:</h4>
+          {selectedPermissions.length === 0 ? (
+            <p className="text-sm text-gray-500 italic">No direct permissions assigned. User relies on role permissions only.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {selectedPermissions.map(permission => (
+                <span key={permission} className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">
+                  {permission}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Permission Groups */}
+        <div className="space-y-6 max-h-96 overflow-y-auto pr-2">
+          {Object.entries(PERMISSION_GROUPS).map(([groupKey, group]) => {
+            const groupPermissions = group.permissions.map(p => p.key);
+            const allSelected = groupPermissions.every(p => selectedPermissions.includes(p));
+            const noneSelected = groupPermissions.every(p => !selectedPermissions.includes(p));
+            
+            return (
+              <div key={groupKey} className="border border-gray-200 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">{group.label}</h3>
+                  <div className="flex space-x-2">
+                    {!allSelected && (
+                      <button
+                        onClick={async () => {
+                          const permissionsToAdd = groupPermissions.filter(p => !selectedPermissions.includes(p));
+                          const nextPermissions = [...selectedPermissions, ...permissionsToAdd];
+                          await persistPermissions(nextPermissions);
+                        }}
+                        className="px-3 py-1 text-xs font-medium bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors disabled:opacity-50"
+                        disabled={allSelected || isSaving}
+                      >
+                        Select All
+                      </button>
+                    )}
+                    {!noneSelected && (
+                      <button
+                        onClick={async () => {
+                          const permissionsToKeep = selectedPermissions.filter(p => !groupPermissions.includes(p));
+                          await persistPermissions(permissionsToKeep);
+                        }}
+                        className="px-3 py-1 text-xs font-medium bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors disabled:opacity-50"
+                        disabled={noneSelected || isSaving}
+                      >
+                        Deselect All
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {group.permissions.map(({ key, label }) => {
+                    const isSelected = selectedPermissions.includes(key);
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => handleTogglePermission(key)}
+                        disabled={isSaving}
+                        className={
+                          `p-3 rounded-lg border-2 text-left transition-all ` +
+                          (isSelected
+                            ? 'bg-green-50 border-green-300 hover:bg-green-100'
+                            : 'bg-white border-gray-200 hover:border-gray-300'
+                          )
+                        }
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-bold text-gray-700">{label}</span>
+                          {isSelected && <Check className="w-4 h-4 text-green-600" />}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1 font-mono">{key}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+          <button
+            onClick={handleClose}
+            className="px-6 py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          {isSaving && <span className="text-sm font-medium text-gray-500">Saving...</span>}
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+export default UserPermissionsModal;

@@ -25,6 +25,9 @@ export const PERMISSIONS = {
   TASKS_DELETE: 'tasks.delete',
   TASKS_ASSIGN: 'tasks.assign',
   TASKS_TEST_UPDATE: 'tasks.test_update',
+  TEST_TASK: 'tasks.test_task',
+  REPORT_BUG: 'tasks.report_bug',
+  VERIFY_TASK: 'tasks.verify_task',
 
   // Roles
   ROLES_VIEW: 'roles.view',
