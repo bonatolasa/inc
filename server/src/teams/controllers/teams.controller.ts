@@ -12,16 +12,19 @@ import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
 @Controller('teams')
 export class TeamsController {
-  constructor(private readonly teamsService: TeamsService) {}
+  constructor(private readonly teamsService: TeamsService) { }
 
   @authorize({
     roles: [Role.ADMIN, Role.PROJECT_MANAGER],
     permissions: [Permissions.TEAMS_CREATE],
   })
   @Post()
-  async createTeam(@Body() createTeamDto: CreateTeamDto): Promise<SingleTeamResponseDto> {
-    const team = await this.teamsService.createTeam(createTeamDto);
-    return { success: true, data: team, message: 'Team created successfully' };
+  async createTeam(
+    @Body() createTeamDto: CreateTeamDto,
+    @CurrentUser() user: { id: string; roles?: string[]; role?: string },
+  ): Promise<SingleTeamResponseDto> {
+    const team = await this.teamsService.createTeam(createTeamDto, user);
+    return { success: true, data: team, message: 'Team created successfully' }
   }
 
   @authorize({
@@ -116,8 +119,7 @@ export class TeamsController {
 
   @authorize({
     permissions: [Permissions.TEAMS_VIEW],
-    roles: [Role.TEAM_MEMBER, Role.TESTER, Role.PROJECT_MANAGER],
-    context: { check: 'team_member', teamIdParam: 'id' },
+    roles: [Role.TEAM_MEMBER, Role.TESTER, Role.PROJECT_MANAGER, Role.ADMIN],
   })
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<SingleTeamResponseDto> {
@@ -127,8 +129,7 @@ export class TeamsController {
 
   @authorize({
     permissions: [Permissions.TEAMS_VIEW],
-    roles: [Role.TEAM_MEMBER, Role.TESTER, Role.PROJECT_MANAGER],
-    context: { check: 'team_member', teamIdParam: 'id' },
+    roles: [Role.TEAM_MEMBER, Role.TESTER, Role.PROJECT_MANAGER, Role.ADMIN],
   })
   @Get(':id/members')
   async getTeamMembers(@Param('id') id: string): Promise<{

@@ -17,7 +17,6 @@ export class CreateTeamDto {
   description?: string;
 
   @IsMongoId()
-  @IsOptional()
   manager!: string;
 
   @IsArray()

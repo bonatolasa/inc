@@ -21,8 +21,53 @@ export class TeamsService {
   ) { }
 
   // create a new team
-  async createTeam(createTeamDto: CreateTeamDto): Promise<TeamResponseDto> {
-    const createdTeam = new this.teamModel(createTeamDto);
+  async createTeam(
+    createTeamDto: CreateTeamDto,
+    actor?: { id: string; roles?: string[]; role?: string },
+  ): Promise<TeamResponseDto> {
+    const uniqueMembers = Array.from(new Set(createTeamDto.members || []));
+    if (uniqueMembers.length === 0) {
+      throw new BadRequestException('At least one team member is required');
+    }
+
+    const actorRoles = actor?.roles || (actor?.role ? [actor.role] : []);
+    const normalizedActorRoles = actorRoles.map((role) => role.toLowerCase());
+    const isProjectManagerCreator = normalizedActorRoles.includes(Role.PROJECT_MANAGER);
+
+    const managerId = isProjectManagerCreator ? actor?.id : createTeamDto.manager;
+    if (!managerId) {
+      throw new BadRequestException('Project manager is required');
+    }
+
+    const manager = await this.usersService.getUserById(managerId);
+    if (!manager.roles?.includes(Role.PROJECT_MANAGER)) {
+      throw new BadRequestException('Selected manager must have project_manager role');
+    }
+
+    const memberUsers = await Promise.all(
+      uniqueMembers.map((memberId) => this.usersService.getUserById(memberId)),
+    );
+
+    const hasTeamMember = memberUsers.some((user) =>
+      user.roles?.includes(Role.TEAM_MEMBER),
+    );
+    const hasTester = memberUsers.some((user) =>
+      user.roles?.includes(Role.TESTER),
+    );
+
+    if (!hasTeamMember) {
+      throw new BadRequestException('Select at least one team member');
+    }
+
+    if (!hasTester) {
+      throw new BadRequestException('Select at least one tester');
+    }
+
+    const createdTeam = new this.teamModel({
+      ...createTeamDto,
+      manager: managerId,
+      members: uniqueMembers,
+    });
     const savedTeam = await createdTeam.save();
 
     // Notify all managers about the new team
