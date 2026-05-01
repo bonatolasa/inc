@@ -3,7 +3,7 @@ import { User } from '../../../types/user.types';
 import { formatDate } from '../../../utils/formatters';
 import { Can, Modal } from '../../../common/components';
 import { userService } from '../../../services/user.service';
-import { PERMISSIONS } from '../../../config/permissions.config';
+import { PERMISSIONS, type PermissionValue } from '../../../config/permissions.config';
 import { Power, PowerOff, Key, Shield } from 'lucide-react';
 import UserPermissionsModal from './UserPermissionsModal';
 import { Role } from '../../../types/user.types';
@@ -15,11 +15,12 @@ interface UserTableProps {
 }
 
 const UserTable: React.FC<UserTableProps> = ({ users, roles, onRefresh }) => {
+  const allPermissionValues = new Set<PermissionValue>(Object.values(PERMISSIONS));
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isTogglingStatus, setIsTogglingStatus] = useState<string | null>(null);
   const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false);
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const [selectedPermissions, setSelectedPermissions] = useState<PermissionValue[]>([]);
   const [isRolesModalOpen, setIsRolesModalOpen] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
 
@@ -45,12 +46,14 @@ const UserTable: React.FC<UserTableProps> = ({ users, roles, onRefresh }) => {
 
   const handleOpenPermissions = (user: User) => {
     setSelectedUser(user);
-    const userPermissions = user.permissions || [];
+    const userPermissions = (user.permissions || []).filter(
+      (permission): permission is PermissionValue => allPermissionValues.has(permission as PermissionValue)
+    );
     setSelectedPermissions(userPermissions);
     setIsPermissionsModalOpen(true);
   };
 
-  const handleSavePermissions = async (permissions: string[]) => {
+  const handleSavePermissions = async (permissions: PermissionValue[]) => {
     const userId = selectedUser?._id || (selectedUser as any)?.id;
     if (!userId) return;
     

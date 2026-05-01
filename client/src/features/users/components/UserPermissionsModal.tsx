@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../../../common/components';
-import { PERMISSIONS } from '../../../config/permissions.config';
+import { PERMISSIONS, type PermissionValue } from '../../../config/permissions.config';
 import { Check, Info } from 'lucide-react';
 
 interface UserPermissionsModalProps {
   isOpen: boolean;
   onClose: () => void;
   userName: string;
-  currentPermissions: string[];
-  onSave: (permissions: string[]) => Promise<void>;
+  currentPermissions: PermissionValue[];
+  onSave: (permissions: PermissionValue[]) => Promise<void>;
 }
 
 const PERMISSION_GROUPS = {
@@ -103,7 +103,7 @@ const UserPermissionsModal: React.FC<UserPermissionsModalProps> = ({
   currentPermissions,
   onSave
 }) => {
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const [selectedPermissions, setSelectedPermissions] = useState<PermissionValue[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -114,7 +114,7 @@ const UserPermissionsModal: React.FC<UserPermissionsModalProps> = ({
     }
   }, [isOpen, currentPermissions]);
 
-  const persistPermissions = async (nextPermissions: string[]) => {
+  const persistPermissions = async (nextPermissions: PermissionValue[]) => {
     setSelectedPermissions(nextPermissions);
     setIsSaving(true);
     setError(null);
@@ -129,7 +129,7 @@ const UserPermissionsModal: React.FC<UserPermissionsModalProps> = ({
     }
   };
 
-  const handleTogglePermission = async (permissionKey: string) => {
+  const handleTogglePermission = async (permissionKey: PermissionValue) => {
     const nextPermissions = selectedPermissions.includes(permissionKey)
       ? selectedPermissions.filter((p) => p !== permissionKey)
       : [...selectedPermissions, permissionKey];
