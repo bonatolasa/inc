@@ -31,10 +31,16 @@ export class ProjectsService {
       throw new BadRequestException('Invalid team ID');
     }
 
+    const startDate = createProjectDto.startDate || new Date();
+    const deadline =
+      createProjectDto.deadline ||
+      new Date(new Date(startDate).getTime() + 30 * 24 * 60 * 60 * 1000);
+
     const project = await this.projectModel.create({
       ...createProjectDto,
       createdBy: creatorId,
-      startDate: createProjectDto.startDate || new Date(),
+      startDate,
+      deadline,
     });
 
     // Notify all team members except the creator
@@ -55,7 +61,14 @@ export class ProjectsService {
   async findAll(): Promise<ProjectResponseDto[]> {
     const projects = await this.projectModel
       .find()
-      .populate('team', 'name members')
+      .populate({
+        path: 'team',
+        select: 'name members',
+        populate: {
+          path: 'members',
+          select: 'name email',
+        },
+      })
       .populate('createdBy', 'name email')
       .exec();
 
@@ -63,6 +76,9 @@ export class ProjectsService {
   }
 
   async findById(id: string): Promise<ProjectResponseDto> {
+    if (!id || id === 'contributor' || id.length < 24) {
+       throw new BadRequestException('Invalid Project ID');
+    }
     return this.getProjectWithDetails(id);
   }
 
@@ -117,6 +133,9 @@ export class ProjectsService {
   }
 
   async getProjectsByContributor(userId: string): Promise<ProjectResponseDto[]> {
+    if (!userId || userId === 'undefined' || userId === 'null') {
+      return [];
+    }
     const teams = await this.teamsService.getTeamsByMember(userId);
     const teamIds = teams.map((team) => team._id);
     if (!teamIds.length) {

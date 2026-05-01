@@ -33,6 +33,7 @@ export class CreateProjectDto {
 
   @Type(() => Date)
   @IsDate()
+  @IsOptional()
   deadline!: Date;
 
   @IsEnum(ProjectStatus)
