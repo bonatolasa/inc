@@ -14,7 +14,7 @@ export class TaskResponseDto {
   title!: string;
   description?: string;
   project?: TaskProjectDto;
-  assignedTo?: TaskUserDto;
+  assignedTo?: TaskUserDto[];
   createdBy?: TaskUserDto;
   status!: string;
   percentageComplete!: number;

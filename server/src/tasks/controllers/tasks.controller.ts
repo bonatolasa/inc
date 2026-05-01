@@ -19,8 +19,13 @@ export class TasksController {
     permissions: [Permissions.TASKS_VIEW],
   })
   @Get('my-tasks')
-  async getMyTasks(@CurrentUser() user: { id: string }) {
-    return this.tasksService.getMyTasks(user.id);
+  async getMyTasks(@CurrentUser() user: { id: string }): Promise<TaskListResponseDto> {
+    const tasks = await this.tasksService.getMyTasks(user.id);
+    return {
+      success: true,
+      data: tasks as any,
+      message: 'My tasks retrieved successfully',
+    };
   }
 
   @authorize({
@@ -105,7 +110,13 @@ export class TasksController {
 
   @authorize({
     roles: [Role.PROJECT_MANAGER, Role.ADMIN, Role.SUPER_ADMIN, Role.TEAM_MEMBER, Role.TESTER],
-    permissions: [Permissions.TASKS_UPDATE, Permissions.TASKS_TEST_UPDATE],
+    permissions: [
+      Permissions.TASKS_UPDATE,
+      Permissions.TASKS_TEST_UPDATE,
+      Permissions.TEST_TASK,
+      Permissions.REPORT_BUG,
+      Permissions.VERIFY_TASK,
+    ],
     context: { check: 'task_access', taskIdParam: 'id' },
   })
   @Patch(':id')
@@ -124,7 +135,13 @@ export class TasksController {
 
   @authorize({
     roles: [Role.PROJECT_MANAGER, Role.ADMIN, Role.SUPER_ADMIN, Role.TEAM_MEMBER, Role.TESTER],
-    permissions: [Permissions.TASKS_UPDATE, Permissions.TASKS_TEST_UPDATE],
+    permissions: [
+      Permissions.TASKS_UPDATE,
+      Permissions.TASKS_TEST_UPDATE,
+      Permissions.TEST_TASK,
+      Permissions.REPORT_BUG,
+      Permissions.VERIFY_TASK,
+    ],
     context: { check: 'task_access', taskIdParam: 'id' },
   })
   @Put(':id')
@@ -195,7 +212,13 @@ export class TasksController {
 
   @authorize({
     roles: [Role.PROJECT_MANAGER, Role.ADMIN, Role.TEAM_MEMBER, Role.TESTER],
-    permissions: [Permissions.TASKS_UPDATE, Permissions.TASKS_TEST_UPDATE],
+    permissions: [
+      Permissions.TASKS_UPDATE,
+      Permissions.TASKS_TEST_UPDATE,
+      Permissions.TEST_TASK,
+      Permissions.REPORT_BUG,
+      Permissions.VERIFY_TASK,
+    ],
     // context: { check: 'task_access', taskIdParam: 'id' },
   })
   @Patch(':id/progress')

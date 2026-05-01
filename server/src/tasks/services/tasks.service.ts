@@ -34,15 +34,13 @@ export class TasksService {
       throw new BadRequestException('Invalid project ID');
     }
 
-    // Validate that project exists is already done above
-    // Security checks moved to controller guards
-
-    const teamMembers = ((project.team as any)?.members || []) as any[];
-    const assignedIsInTeam = teamMembers.some(
-      (member) => member?.toString() === createTaskDto.assignedTo,
+    const teamMembers = ((project.team as any)?.members || []).map((m: any) => m.toString());
+    const allAssignedInTeam = createTaskDto.assignedTo.every(
+      (id) => teamMembers.includes(id),
     );
-    if (!assignedIsInTeam) {
-      throw new BadRequestException('Task assignee must be a team member');
+    
+    if (!allAssignedInTeam) {
+      throw new BadRequestException('All task assignees must be team members of the assigned project team');
     }
 
     if (
@@ -56,25 +54,26 @@ export class TasksService {
       createTaskDto.percentageComplete = 100;
     }
 
-    // Attach createdBy to the task document
     const created = await this.taskModel.create({ ...createTaskDto, createdBy: creatorId });
+    
+    // Notifications
+    const recipients = [...new Set([...createTaskDto.assignedTo, creatorId])];
     this.notificationEvents.emit(NotificationEvents.TASK_CREATED, {
-      recipients: [
-        createTaskDto.assignedTo,
-        creatorId
-      ],
+      recipients,
       title: 'Task Created',
-      message: `Task \"${created.title}\" was created`,
+      message: `Task "${created.title}" was created`,
       type: 'task.created',
       relatedId: created._id.toString(),
     });
+
     this.notificationEvents.emit(NotificationEvents.TASK_ASSIGNED, {
-      recipients: [createTaskDto.assignedTo],
+      recipients: createTaskDto.assignedTo,
       title: 'Task Assigned',
-      message: `You have been assigned task "${created.title}"`,
+      message: `You have been assigned to task "${created.title}"`,
       type: 'task.assigned',
       relatedId: created._id.toString(),
     });
+
     await this.projectsService.recalculateProjectProgress(createTaskDto.project);
     return this.getTaskWithDetails(created._id.toString());
   }
@@ -115,13 +114,11 @@ export class TasksService {
   ): Promise<TaskResponseDto> {
     const task = await this.taskModel
       .findById(id)
-      .populate('project', 'createdBy')
+      .populate('project', 'createdBy team')
       .exec();
     if (!task) {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
-
-    // Authorization moved to controller guards
 
     if (updateTaskDto.assignedTo) {
       const project = await this.projectModel
@@ -129,10 +126,10 @@ export class TasksService {
         .populate('team', 'members')
         .select('team')
         .exec();
-      const members = ((project?.team as any)?.members || []) as any[];
-      const inTeam = members.some((member) => member.toString() === updateTaskDto.assignedTo);
-      if (!inTeam) {
-        throw new BadRequestException('Task assignee must be a team member');
+      const members = ((project?.team as any)?.members || []).map((m: any) => m.toString());
+      const allInTeam = updateTaskDto.assignedTo.every((id) => members.includes(id));
+      if (!allInTeam) {
+        throw new BadRequestException('All task assignees must be members of the project team');
       }
     }
 
@@ -148,7 +145,7 @@ export class TasksService {
       }
     }
 
-    const oldAssignee = task.assignedTo?.toString();
+    const oldAssignees = (task.assignedTo || []).map(a => a.toString());
     const updated = await this.taskModel
       .findByIdAndUpdate(id, updateTaskDto, {
         new: true,
@@ -159,25 +156,31 @@ export class TasksService {
       .populate('createdBy', 'name email')
       .populate('dependencies', 'title')
       .exec();
+    
     if (!updated) {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
 
-    const getRecipientId = (val: any) => val?._id?.toString() || val?.toString();
+    const getRecipientId = (val: any) => val?._id?.toString?.() || val?.toString?.();
+    const newAssignees = (updated.assignedTo || []).map(a => getRecipientId(a)).filter(Boolean);
+    const creatorRecipient = getRecipientId(updated.createdBy);
+
+    const recipients = [...new Set([...newAssignees, creatorRecipient].filter(Boolean))];
 
     this.notificationEvents.emit(NotificationEvents.TASK_UPDATED, {
-      recipients: [getRecipientId(updated.createdBy), getRecipientId(updated.assignedTo)],
+      recipients,
       title: 'Task Updated',
       message: `Task "${updated.title}" has been updated`,
       type: 'task.updated',
       relatedId: updated._id.toString(),
     });
 
-    if (oldAssignee && oldAssignee !== getRecipientId(updated.assignedTo)) {
+    const newlyAssigned = newAssignees.filter(id => !oldAssignees.includes(id));
+    if (newlyAssigned.length > 0) {
       this.notificationEvents.emit(NotificationEvents.TASK_ASSIGNED, {
-        recipients: [getRecipientId(updated.assignedTo)],
-        title: 'Task Reassigned',
-        message: `You have been assigned task "${updated.title}"`,
+        recipients: newlyAssigned,
+        title: 'Task Assigned',
+        message: `You have been assigned to task "${updated.title}"`,
         type: 'task.assigned',
         relatedId: updated._id.toString(),
       });
@@ -209,7 +212,7 @@ export class TasksService {
 
   async getTasksByUser(userId: string): Promise<TaskResponseDto[]> {
     const tasks = await this.taskModel
-      .find({ assignedTo: userId })
+      .find({ assignedTo: { $in: [userId] } })
       .populate('project', 'name')
       .populate('assignedTo', 'name email')
       .populate('createdBy', 'name email')
@@ -220,7 +223,7 @@ export class TasksService {
 
   async getMyTasks(userId: string): Promise<Task[]> {
     return this.taskModel
-      .find({ assignedTo: new Types.ObjectId(userId) })
+      .find({ assignedTo: { $in: [new Types.ObjectId(userId)] } })
       .populate('project', 'name')
       .populate('assignedTo', 'name email')
       .sort({ createdAt: -1 })
@@ -349,13 +352,13 @@ export class TasksService {
             name: (task.project as any).name || '',
           }
         : undefined,
-      assignedTo: task.assignedTo
-        ? {
-            _id: (task.assignedTo as any)._id?.toString() || task.assignedTo.toString(),
-            name: (task.assignedTo as any).name || '',
-            email: (task.assignedTo as any).email || '',
-          }
-        : undefined,
+      assignedTo: Array.isArray(task.assignedTo) 
+        ? task.assignedTo.map((u: any) => ({
+            _id: u._id?.toString() || u.toString(),
+            name: u.name || '',
+            email: u.email || '',
+          }))
+        : [],
       createdBy: task.createdBy
         ? {
             _id: (task.createdBy as any)._id?.toString() || (task.createdBy as any).toString(),

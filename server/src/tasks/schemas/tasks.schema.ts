@@ -14,8 +14,8 @@ export class Task extends Document {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Project', required: true })
   project!: Types.ObjectId;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
-  assignedTo!: Types.ObjectId;
+  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }], required: true })
+  assignedTo!: Types.ObjectId[];
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
   createdBy!: Types.ObjectId;

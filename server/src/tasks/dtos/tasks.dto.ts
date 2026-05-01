@@ -25,8 +25,9 @@ export class CreateTaskDto {
   @IsMongoId()
   project!: string;
 
-  @IsMongoId()
-  assignedTo!: string;
+  @IsArray()
+  @IsMongoId({ each: true })
+  assignedTo!: string[];
 
   @IsEnum(TaskStatus)
   @IsOptional()
