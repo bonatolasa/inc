@@ -12,7 +12,7 @@ import { usePermission } from '../../../hooks/usePermission';
 import { useAuth } from '../../../hooks/useAuth';
 
 const TasksList = () => {
-  const ITEMS_PER_PAGE = 4;
+  const ITEMS_PER_PAGE = 6;
   const { user } = useAuth();
   const { hasRole } = usePermission();
   const isTeamMember = hasRole('team_member');

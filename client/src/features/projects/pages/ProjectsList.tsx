@@ -11,7 +11,7 @@ import { PERMISSIONS } from '../../../config/permissions.config';
 import { FolderKanban, Users, Info, PlusCircle } from 'lucide-react';
 
 const ProjectsList = () => {
-  const ITEMS_PER_PAGE = 4;
+  const ITEMS_PER_PAGE = 6;
   const { user } = useAuth();
   const { hasRole, hasPermission } = usePermission();
   const currentUserId = (user?._id || (user as any)?.id || '').toString();

@@ -10,7 +10,7 @@ import { PlusCircle, Info, Users } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
 
 const TeamsList = () => {
-  const ITEMS_PER_PAGE = 6;
+  const ITEMS_PER_PAGE = 8;
   const { user, selectedRole } = useAuth();
   const [teams, setTeams] = useState<Team[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
