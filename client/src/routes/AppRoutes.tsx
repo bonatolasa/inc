@@ -14,6 +14,7 @@ import NotFound from '../pages/errors/NotFound';
 
 import Login from '../auth/Login';
 import Signup from '../auth/Signup';
+import AcceptInvite from '../auth/AcceptInvite';
 
 // Features
 import UsersList from '../features/users/pages/UsersList';
@@ -26,6 +27,7 @@ import TaskDetails from '../features/tasks/pages/TaskDetails';
 import RolesList from '../features/roles/pages/RolesList';
  import DashboardReport from '../features/reports/pages/Reports';
 import ActivitiesPage from '../features/activities/pages/ActivitiesPage';
+import ProfilePage from '../pages/profile/ProfilePage';
 
 export const AppRoutes = () => {
   return (
@@ -33,6 +35,7 @@ export const AppRoutes = () => {
       {/* Public Routes */}
       <Route path={ROUTES.LOGIN} element={<Login />} />
       <Route path={ROUTES.SIGNUP} element={<Signup />} />
+      <Route path={ROUTES.ACCEPT_INVITE} element={<AcceptInvite />} />
 
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
@@ -71,6 +74,7 @@ export const AppRoutes = () => {
           </Route>
 
           <Route path="/activities" element={<ActivitiesPage />} />
+          <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
 
           <Route element={<AccessRoute roles={['admin', 'super_admin']} />}>
             <Route path={ROUTES.ADMIN_SETTINGS} element={<SettingsPage />} />

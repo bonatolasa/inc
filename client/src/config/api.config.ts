@@ -6,10 +6,12 @@ export const API_ENDPOINTS = {
     LOGIN: '/auth/login',
     REGISTER: '/auth/register',
     VERIFY_PASSWORD: '/auth/verify-password',
+    ACCEPT_INVITE: '/auth/accept-invite',
   },
   USERS: {
     ME: '/users/me',
     BASE: '/users',
+    INVITE: '/users/invite',
     ROLES: (userId: string) => `/users/${userId}/roles`,
     MANAGERS_STATS: '/users/managers/stats',
     MEMBERS: '/users/members',
@@ -58,6 +60,7 @@ export const API_ENDPOINTS = {
   ROLES: {
     BASE: '/roles',
     RENAME: (roleName: string) => `/roles/${roleName}/rename`,
+    DISPLAY_NAME: (roleName: string) => `/roles/${roleName}/display-name`,
     PERMISSIONS: (roleName: string) => `/roles/${roleName}/permissions`,
   },
   PERMISSIONS: {

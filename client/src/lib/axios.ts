@@ -19,8 +19,16 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // Check if network error and currently using local URL
-    if (error.message === 'Network Error' && api.defaults.baseURL === API_BASE_URL) {
+    // Only fallback to deployed API for safe idempotent requests.
+    // Avoid retrying local POST/PUT/PATCH/DELETE requests against the deployed API,
+    // which can return a stale route error like "Cannot POST /api/users/invite".
+    const safeMethods = ['get', 'head', 'options'];
+    const requestMethod = error.config?.method?.toLowerCase();
+    if (
+      error.message === 'Network Error' &&
+      api.defaults.baseURL === API_BASE_URL &&
+      safeMethods.includes(requestMethod)
+    ) {
       console.warn('Local API unreachable, falling back to deployed API...');
       api.defaults.baseURL = API_DEPLOYED;
       
