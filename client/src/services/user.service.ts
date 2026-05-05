@@ -9,6 +9,10 @@ export interface PaginatedUsersResponse extends ApiResponse<User[]> {
   limit?: number;
 }
 
+export interface InviteUserResponse extends ApiResponse<User> {
+  inviteEmailSent?: boolean;
+}
+
 export const userService = {
   getMe: async (): Promise<ApiResponse<User>> => {
     const response = await api.get(API_ENDPOINTS.USERS.ME);
@@ -29,6 +33,11 @@ export const userService = {
 
   createUser: async (data: any): Promise<ApiResponse<User>> => {
     const response = await api.post(API_ENDPOINTS.USERS.BASE, data);
+    return response.data;
+  },
+
+  inviteUser: async (data: any): Promise<InviteUserResponse> => {
+    const response = await api.post(API_ENDPOINTS.USERS.INVITE, data);
     return response.data;
   },
 

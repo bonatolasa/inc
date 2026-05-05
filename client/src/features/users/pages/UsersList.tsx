@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { userService } from '../../../services/user.service';
 import { roleService } from '../../../services/role.service';
 import { User, Role } from '../../../types/user.types';
+import { getRoleDisplayName } from '../../../utils/roles';
 import UserTable from '../components/UserTable';
 import { Loader, Modal, Can } from '../../../common/components';
 import { PERMISSIONS } from '../../../config/permissions.config';
@@ -20,7 +21,6 @@ const UsersList = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: 'Password123!', // Default password for new invites
     role: 'team_member'
   });
 
@@ -55,21 +55,28 @@ const UsersList = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const response = await userService.createUser({
+      const response = await userService.inviteUser({
         name: formData.name,
         email: formData.email,
-        password: formData.password,
         roles: [formData.role]
       });
       
       if (response.success) {
+        if (!response.inviteEmailSent) {
+          alert('User invited, but email was not sent. Configure SMTP on the server to send invite emails.');
+        }
         setIsModalOpen(false);
-        setFormData({ name: '', email: '', password: 'Password123!', role: 'team_member' });
+        setFormData({ name: '', email: '', role: 'team_member' });
         fetchData(page); // Refresh list
       }
     } catch (error) {
-      alert("Error creating user. Check console for details.");
-      console.error(error);
+      const err = error as any;
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to send invitation.';
+      alert(`Invite failed: ${message}`);
+      console.error('Invite failed:', err?.response?.data || err);
     } finally {
       setIsSubmitting(false);
     }
@@ -156,16 +163,16 @@ const UsersList = () => {
               value={formData.role}
               onChange={(e) => setFormData({...formData, role: e.target.value})}
             >
-              {roles.map(role => (
+              {roles.map((role) => (
                 <option key={role._id} value={role.name}>
-                  {role.name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  {getRoleDisplayName(role)}
                 </option>
               ))}
                {roles.length === 0 && (
                  <>
-                   <option value="team_member">Team Member</option>
-                   <option value="project_manager">Project Manager</option>
-                   <option value="admin">System Admin</option>
+                   <option value="team_member">{getRoleDisplayName('team_member')}</option>
+                   <option value="project_manager">{getRoleDisplayName('project_manager')}</option>
+                   <option value="admin">{getRoleDisplayName('admin')}</option>
                  </>
                )}
             </select>
@@ -180,7 +187,7 @@ const UsersList = () => {
             </button>
           </div>
           <p className="text-[10px] text-gray-400 text-center font-medium">
-            Temporary password: <span className="font-bold">Password123!</span> (User should change this on first login)
+            The invited user will receive an email with a secure link to set their password.
           </p>
         </form>
       </Modal>

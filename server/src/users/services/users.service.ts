@@ -11,12 +11,16 @@ import { Project } from 'src/projects/schemas/project.schema';
 import { CreateUserDto, UpdateUserDto } from '../dtos/users.dto';
 import { UserResponseDto } from '../responses/users.response';
 import * as bcrypt from 'bcryptjs';
+import { randomBytes, createHash } from 'crypto';
+import { InvitationEmailService } from './invitation-email.service';
+import { InviteUserDto } from '../dtos/users.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Project.name) private projectModel: Model<Project>,
+    private invitationEmailService: InvitationEmailService,
   ) {}
 
   //create user with hashed password and check for duplicate email
@@ -49,6 +53,68 @@ export class UsersService {
 
     const savedUser = await createdUser.save();
     return this.mapToResponseDto(savedUser);
+  }
+
+  async inviteUser(inviteUserDto: InviteUserDto): Promise<{ user: UserResponseDto; emailSent: boolean }> {
+    const normalizedEmail = inviteUserDto.email.toLowerCase();
+    const existingUser = await this.userModel.findOne({ email: normalizedEmail });
+
+    if (existingUser && existingUser.invitationAcceptedAt) {
+      throw new BadRequestException('Email already exists');
+    }
+
+    const rawToken = randomBytes(32).toString('hex');
+    const invitationTokenHash = createHash('sha256').update(rawToken).digest('hex');
+    const invitationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const inviteBaseUrl = process.env.INVITE_BASE_URL || 'http://localhost:5173/accept-invite';
+    const inviteLink = `${inviteBaseUrl}?token=${encodeURIComponent(rawToken)}`;
+
+    const roles = inviteUserDto.role
+      ? [inviteUserDto.role]
+      : inviteUserDto.roles && inviteUserDto.roles.length > 0
+        ? inviteUserDto.roles
+        : ['team_member'];
+
+    let userDoc: User;
+    if (existingUser) {
+      existingUser.name = inviteUserDto.name;
+      existingUser.roles = roles;
+      existingUser.team = inviteUserDto.team as any;
+      existingUser.invitationTokenHash = invitationTokenHash;
+      existingUser.invitationExpiresAt = invitationExpiresAt;
+      existingUser.invitationSentAt = new Date();
+      existingUser.invitationAcceptedAt = undefined;
+      userDoc = await existingUser.save();
+    } else {
+      const placeholderPassword = randomBytes(24).toString('hex');
+      const hashedPassword = await bcrypt.hash(placeholderPassword, 10);
+      const created = new this.userModel({
+        ...inviteUserDto,
+        email: normalizedEmail,
+        password: hashedPassword,
+        roles,
+        invitationTokenHash,
+        invitationExpiresAt,
+        invitationSentAt: new Date(),
+      });
+      userDoc = await created.save();
+    }
+
+    const emailSent = await this.invitationEmailService.sendInviteEmail(
+      normalizedEmail,
+      inviteUserDto.name,
+      inviteLink,
+    );
+
+    return {
+      user: this.mapToResponseDto(userDoc),
+      emailSent,
+    };
+  }
+
+  async findByInvitationToken(token: string): Promise<User | null> {
+    const invitationTokenHash = createHash('sha256').update(token).digest('hex');
+    return this.userModel.findOne({ invitationTokenHash }).exec();
   }
 
   //Get all users with team name populated (with pagination)

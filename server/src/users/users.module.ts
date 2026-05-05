@@ -5,6 +5,7 @@ import { UsersController } from './controllers/users.controller';
 import { UsersService } from './services/users.service';
 import { Project, ProjectSchema } from 'src/projects/schemas/project.schema';
 import { RolesModule } from '../auth/roles/roles.module';
+import { InvitationEmailService } from './services/invitation-email.service';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { RolesModule } from '../auth/roles/roles.module';
     RolesModule,
   ],
   controllers: [UsersController],
-  providers: [UsersService],
+  providers: [UsersService, InvitationEmailService],
   exports: [UsersService],
 })
 export class UsersModule {}

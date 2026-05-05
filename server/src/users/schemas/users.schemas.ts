@@ -6,6 +6,10 @@ export class User extends Document {
   @Prop({ required: true }) name: string;
   @Prop({ required: true, unique: true, lowercase: true }) email: string;
   @Prop({ required: true }) password: string;
+  @Prop() invitationTokenHash?: string;
+  @Prop() invitationExpiresAt?: Date;
+  @Prop() invitationSentAt?: Date;
+  @Prop() invitationAcceptedAt?: Date;
   @Prop({ type: [String], default: ['team_member'] }) roles: string[];
   @Prop({ type: [String], default: [] })
   permissions!: string[];  // Direct permissions assigned to user (hybrid RBAC)

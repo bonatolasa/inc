@@ -16,7 +16,7 @@ import {
   UserListResponseDto,
   GenericListResponseDto,
 } from '../responses/users.response';
-import { CreateUserDto, UpdateUserDto } from '../dtos/users.dto';
+import { CreateUserDto, InviteUserDto, UpdateUserDto } from '../dtos/users.dto';
 import { User } from '../schemas/users.schemas';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { authorize } from 'src/auth/decorators/authorize.decorator';
@@ -98,6 +98,22 @@ export class UsersController {
       success: true,
       data: user,
       message: 'User created successfully',
+    };
+  }
+
+  @authorize(Permissions.USERS_CREATE)
+  @Post('invite')
+  async inviteUser(
+    @Body() inviteUserDto: InviteUserDto,
+  ): Promise<SingleUserResponseDto & { inviteEmailSent: boolean }> {
+    const { user, emailSent } = await this.usersService.inviteUser(inviteUserDto);
+    return {
+      success: true,
+      data: user,
+      inviteEmailSent: emailSent,
+      message: emailSent
+        ? 'Invitation sent successfully'
+        : 'User invited, but email was not sent because SMTP is not configured in .env. Use your existing environment file and do not create a new example file.',
     };
   }
 

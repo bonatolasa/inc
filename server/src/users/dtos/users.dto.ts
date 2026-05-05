@@ -52,3 +52,32 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsOptional()
   isActive?: boolean;
 }
+
+export class InviteUserDto {
+  @IsString()
+  @MinLength(2)
+  name!: string;
+
+  @IsEmail()
+  @Transform(({ value }) => value.toLowerCase().trim())
+  email!: string;
+
+  @IsArray()
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return [value.toLowerCase().trim().replace(/\s+/g, '_')];
+    }
+    return value?.map((v: string) => v.toLowerCase().trim().replace(/\s+/g, '_')) || ['team_member'];
+  })
+  roles?: string[];
+
+  @IsString()
+  @IsOptional()
+  @Transform(({ value }) => value?.toLowerCase().trim().replace(/\s+/g, '_'))
+  role?: string;
+
+  @IsMongoId()
+  @IsOptional()
+  team?: string;
+}
