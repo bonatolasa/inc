@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { User } from '../../../types/user.types';
+import { User, Role } from '../../../types/user.types';
 import { formatDate } from '../../../utils/formatters';
 import { Can, Modal } from '../../../common/components';
 import { userService } from '../../../services/user.service';
 import { PERMISSIONS, type PermissionValue } from '../../../config/permissions.config';
 import { Power, PowerOff, Key, Shield } from 'lucide-react';
 import UserPermissionsModal from './UserPermissionsModal';
-import { Role } from '../../../types/user.types';
+import { getRoleDisplayName } from '../../../utils/roles';
 
 interface UserTableProps {
   users: User[];
@@ -145,7 +145,6 @@ const UserTable: React.FC<UserTableProps> = ({ users, roles, onRefresh }) => {
                 <td className="p-5">
                   <div className="flex gap-2 flex-wrap">
                     {(user.roles || []).map((role: any) => {
-                      const roleName = typeof role === 'string' ? role : role.name;
                       const roleId = typeof role === 'string' ? role : (role._id || role.name);
                       return (
                         <span 
@@ -156,7 +155,7 @@ const UserTable: React.FC<UserTableProps> = ({ users, roles, onRefresh }) => {
                               : 'bg-gray-100 text-gray-400 border-gray-200'
                           }`}
                         >
-                          {roleName}
+                          {getRoleDisplayName(role)}
                         </span>
                       );
                     })}

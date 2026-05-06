@@ -16,5 +16,10 @@ export const authService = {
   verifyPassword: async (password: string): Promise<ApiResponse<any>> => {
     const response = await api.post(API_ENDPOINTS.AUTH.VERIFY_PASSWORD, { password });
     return response.data;
+  },
+
+  acceptInvite: async (token: string, password: string): Promise<ApiResponse<any>> => {
+    const response = await api.post(API_ENDPOINTS.AUTH.ACCEPT_INVITE, { token, password });
+    return response.data;
   }
 };
