@@ -9,7 +9,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from '../services/auth.service';
-import { LoginDto, RegisterDto } from '../dtos/auth.dto';
+import { AcceptInviteDto, LoginDto, RegisterDto } from '../dtos/auth.dto';
 import { AuthResponseDto } from '../responses/auth.response';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
@@ -31,6 +31,18 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
     return this.authService.login(loginDto);
+  }
+
+  @Post('accept-invite')
+  @HttpCode(HttpStatus.OK)
+  async acceptInvite(
+    @Body() acceptInviteDto: AcceptInviteDto,
+  ): Promise<{ success: boolean; message: string }> {
+    await this.authService.acceptInvite(acceptInviteDto.token, acceptInviteDto.password);
+    return {
+      success: true,
+      message: 'Invitation accepted. You can now sign in.',
+    };
   }
 
   // we avoid using the guard here to prevent a 500 when the token is missing/invalid

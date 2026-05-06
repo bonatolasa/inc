@@ -42,3 +42,15 @@ export class RegisterDto {
   @IsOptional()
   role?: Role;
 }
+
+export class AcceptInviteDto {
+  @IsString()
+  token!: string;
+
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
+    message: 'Password is too weak. Must contain uppercase, lowercase, and numbers/symbols',
+  })
+  password!: string;
+}

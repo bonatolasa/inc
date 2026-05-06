@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
@@ -76,6 +77,9 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
+    if (user.invitationTokenHash) {
+      throw new UnauthorizedException('Please accept your invitation from email before signing in');
+    }
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(
@@ -142,5 +146,22 @@ export class AuthService {
       console.error('Error verifying password for user', userId, ':', error);
       return false;
     }
+  }
+
+  async acceptInvite(token: string, password: string): Promise<void> {
+    const user = await this.usersService.findByInvitationToken(token);
+    if (!user) {
+      throw new BadRequestException('Invalid invitation token');
+    }
+
+    if (!user.invitationExpiresAt || user.invitationExpiresAt.getTime() < Date.now()) {
+      throw new BadRequestException('Invitation token has expired');
+    }
+
+    user.password = await bcrypt.hash(password, 10);
+    user.invitationAcceptedAt = new Date();
+    user.invitationTokenHash = undefined;
+    user.invitationExpiresAt = undefined;
+    await user.save();
   }
 }
