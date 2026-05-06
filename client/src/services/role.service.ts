@@ -24,13 +24,13 @@ export const roleService = {
     return response.data;
   },
 
-  addPermissionsToRole: async (roleName: string, permissions: string[]): Promise<ApiResponse<Role>> => {
-    const response = await api.patch(API_ENDPOINTS.ROLES.PERMISSIONS(roleName), { permissions });
+  updateDisplayName: async (roleName: string, displayName: string): Promise<ApiResponse<Role>> => {
+    const response = await api.patch(API_ENDPOINTS.ROLES.DISPLAY_NAME(roleName), { displayName });
     return response.data;
   },
 
-  removePermissionsFromRole: async (roleName: string, permissions: string[]): Promise<ApiResponse<Role>> => {
-    const response = await api.delete(API_ENDPOINTS.ROLES.PERMISSIONS(roleName), { data: { permissions } });
+  updatePermissions: async (roleName: string, permissions: string[]): Promise<ApiResponse<Role>> => {
+    const response = await api.patch(API_ENDPOINTS.ROLES.PERMISSIONS(roleName), { permissions });
     return response.data;
   },
 

@@ -22,11 +22,25 @@ export class RolesService implements OnModuleInit {
   ) { }
 
   async onModuleInit() {
+    // Default display names for system roles
+    const DEFAULT_DISPLAY_NAMES: Record<string, string> = {
+      [Role.SUPER_ADMIN]: 'Super Admin',
+      [Role.ADMIN]: 'Admin',
+      [Role.PROJECT_MANAGER]: 'Project Manager',
+      [Role.TESTER]: 'Tester',
+      [Role.TEAM_MEMBER]: 'Team Member',
+    };
+
     await Promise.all(
       Object.entries(ROLE_PERMISSIONS).map(async ([role, permissions]) => {
+        const displayName = DEFAULT_DISPLAY_NAMES[role] || role.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
         await this.roleModel.findOneAndUpdate(
           { name: role },
-          { name: role, permissions: Array.from(new Set(permissions)) },
+          { 
+            name: role, 
+            displayName,
+            permissions: Array.from(new Set(permissions)) 
+          },
           { upsert: true, new: true },
         );
       }),
@@ -57,39 +71,28 @@ export class RolesService implements OnModuleInit {
     return this.roleModel.find().sort({ name: 1 }).exec();
   }
 
-  async createRole(name: string, description?: string): Promise<RoleDocument> {
+  async createRole(name: string, displayName?: string, description?: string): Promise<RoleDocument> {
     const normalized = this.normalizeName(name);
     const existing = await this.getByName(normalized);
     if (existing) {
       throw new BadRequestException(`Role "${normalized}" already exists`);
     }
+    
+    // Generate display name if not provided
+    const finalDisplayName = displayName || name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    
     return this.roleModel.create({
       name: normalized,
+      displayName: finalDisplayName,
       description,
       permissions: [],
     });
   }
 
-  async renameRole(oldName: string, newName: string): Promise<RoleDocument> {
-    const normalizedOld = this.normalizeName(oldName);
-    const normalizedNew = this.normalizeName(newName);
-
-    if (normalizedOld === Role.SUPER_ADMIN) {
-      throw new BadRequestException('SUPER_ADMIN role cannot be renamed');
-    }
-
-    const oldRole = await this.getByName(normalizedOld);
-    if (!oldRole) {
-      throw new NotFoundException(`Role "${normalizedOld}" not found`);
-    }
-
-    const targetExists = await this.getByName(normalizedNew);
-    if (targetExists) {
-      throw new BadRequestException(`Role "${normalizedNew}" already exists`);
-    }
-
-    oldRole.name = normalizedNew;
-    return oldRole.save();
+  async updateDisplayName(name: string, displayName: string): Promise<RoleDocument> {
+    const role = await this.getExistingRole(name);
+    role.displayName = displayName.trim();
+    return role.save();
   }
 
   async deleteRole(name: string): Promise<void> {

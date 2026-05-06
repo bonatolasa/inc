@@ -24,10 +24,10 @@ export class RolesController {
 
   @authorize({ permissions: [Permissions.ROLES_CREATE] })
   @Post()
-  async createRole(@Body() body: { name: string; description?: string }) {
+  async createRole(@Body() body: { name: string; displayName?: string; description?: string }) {
     return {
       success: true,
-      data: await this.rolesService.createRole(body.name, body.description),
+      data: await this.rolesService.createRole(body.name, body.displayName, body.description),
       message: 'Role created successfully',
     };
   }
@@ -42,29 +42,15 @@ export class RolesController {
   }
 
   @authorize({ permissions: [Permissions.ROLES_UPDATE] })
-  @Patch(':name/rename')
-  async renameRole(
+  @Patch(':name/display-name')
+  async updateDisplayName(
     @Param('name') name: string,
-    @Body() body: { newName: string },
+    @Body() body: { displayName: string },
   ) {
-    const renamed = await this.rolesService.renameRole(name, body.newName);
-
-    await this.userModel.updateMany(
-      { roles: name.toLowerCase().trim().replace(/\s+/g, '_') },
-      {
-        $set: {
-          'roles.$[oldRole]': renamed.name,
-        },
-      },
-      {
-        arrayFilters: [{ oldRole: name.toLowerCase().trim().replace(/\s+/g, '_') }],
-      },
-    );
-
     return {
       success: true,
-      data: renamed,
-      message: 'Role renamed successfully',
+      data: await this.rolesService.updateDisplayName(name, body.displayName),
+      message: 'Display name updated successfully',
     };
   }
 

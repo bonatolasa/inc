@@ -13,6 +13,7 @@ const RolesList = () => {
   
   const [formData, setFormData] = useState({
     name: '',
+    displayName: '',
     description: ''
   });
 
@@ -41,12 +42,13 @@ const RolesList = () => {
     setIsSubmitting(true);
     try {
       const response = await roleService.createRole({
-        name: formData.name.toLowerCase().replace(' ', '_'),
+        name: formData.name.toLowerCase().replace(/\s+/g, '_'),
+        displayName: formData.displayName || formData.name,
         description: formData.description
       });
       if (response.success) {
         setIsModalOpen(false);
-        setFormData({ name: '', description: '' });
+        setFormData({ name: '', displayName: '', description: '' });
         fetchRoles();
       }
     } catch (error) {
@@ -103,10 +105,17 @@ const RolesList = () => {
               onChange={(e) => setFormData({...formData, name: e.target.value})}
               placeholder="e.g. Lead Tester"
             />
-            <p className="text-[10px] text-gray-400 mt-1 font-medium italic">Slug will be generated automatically (e.g. lead_tester)</p>
-          </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Purpose/Description</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Display Name</label>
+            <input 
+              type="text" 
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold"
+              value={formData.displayName}
+              onChange={(e) => setFormData({...formData, displayName: e.target.value})}
+              placeholder="e.g. Lead Tester"
+            />
+            <p className="text-[10px] text-gray-400 mt-1 font-medium italic">How this role will appear in the UI (optional, will use identifier if empty)</p>
+          </div>
             <textarea 
               rows={2}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium resize-none"

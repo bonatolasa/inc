@@ -6,6 +6,9 @@ export class RoleDocument extends Document {
   @Prop({ required: true, unique: true, trim: true, lowercase: true })
   name!: string;
 
+  @Prop({ trim: true })
+  displayName?: string;
+
   @Prop({ type: [String], default: [] })
   permissions!: string[];
 
