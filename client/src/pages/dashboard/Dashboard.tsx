@@ -122,7 +122,7 @@ const Dashboard = () => {
 
   if (loading) return <Loader />;
 
-  const roleDisplay = selectedRole ? getRoleDisplayName(selectedRole) : (isAdmin ? 'Administrator' : isManager ? 'Project Manager' : isTester ? 'Tester' : 'Team Member');
+  const roleDisplay = selectedRole ? getRoleDisplayName(selectedRole) : (isAdmin ? getRoleDisplayName('admin') : isManager ? getRoleDisplayName('project_manager') : isTester ? getRoleDisplayName('tester') : getRoleDisplayName('team_member'));
 
   // Calculate metrics
   const totalTasks = stats?.totalTasks || stats?.totalTasks || 0;
