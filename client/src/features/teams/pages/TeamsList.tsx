@@ -8,6 +8,7 @@ import { Loader, Modal, Can } from '../../../common/components';
 import { PERMISSIONS } from '../../../config/permissions.config';
 import { PlusCircle, Info, Users } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
+import { getRoleDisplayName } from '../../../utils/roles';
 
 const TeamsList = () => {
   const ITEMS_PER_PAGE = 8;
@@ -256,7 +257,7 @@ const TeamsList = () => {
           <div className="bg-blue-50/50 p-4 rounded-xl flex items-start space-x-3 border border-blue-100">
             <Info className="w-5 h-5 text-primary mt-0.5" />
             <p className="text-xs font-bold text-blue-700 leading-relaxed">
-              Project manager can create team by selecting one manager, at least one team member, and at least one tester.
+              {getRoleDisplayName('project_manager')} can create a team by selecting one manager, at least one {getRoleDisplayName('team_member').toLowerCase()}, and at least one {getRoleDisplayName('tester').toLowerCase()}.
             </p>
           </div>
 
@@ -290,7 +291,7 @@ const TeamsList = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Project Manager</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1">{getRoleDisplayName('project_manager')}</label>
             {isAdminLike ? (
               <select
                 required
@@ -298,7 +299,7 @@ const TeamsList = () => {
                 value={formData.manager}
                 onChange={(e) => setFormData({ ...formData, manager: e.target.value })}
               >
-                <option value="">Select project manager</option>
+                <option value="">Select {getRoleDisplayName('project_manager')}</option>
                 {managers.map((pm) => {
                   const pmId = pm._id || (pm as any).id;
                   return (
