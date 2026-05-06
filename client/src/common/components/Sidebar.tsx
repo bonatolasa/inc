@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { usePermission } from '../../hooks/usePermission';
 import { ROUTES } from '../../config/routes.config';
@@ -23,6 +24,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, setIsOpen }) => {
   const { user } = useAuth();
   const { hasRole, hasPermission } = usePermission();
+  const navigate = useNavigate();
   
   const hasAccess = (permissions?: PermissionValue[], roles?: string[]) => {
     if (!permissions && !roles) return true;
@@ -125,7 +127,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, setIsOpen }) => {
       </nav>
 
       <div className={`${isOpen ? 'p-4 m-4' : 'p-2 my-4 mx-3'} bg-gray-50 rounded-2xl border border-gray-100 transition-all duration-300`}>
-        <div className={`flex items-center ${isOpen ? 'space-x-3' : 'justify-center'} cursor-default`}>
+        <button
+          type="button"
+          onClick={() => navigate(ROUTES.PROFILE)}
+          className={`w-full flex items-center ${isOpen ? 'space-x-3' : 'justify-center'} hover:bg-white rounded-xl p-1 transition-colors`}
+        >
           <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-blue-400 flex items-center justify-center text-white font-bold shadow-sm flex-shrink-0">
             {user?.name?.charAt(0).toUpperCase()}
           </div>
@@ -135,7 +141,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, setIsOpen }) => {
               <p className="text-xs text-gray-500 truncate font-semibold">{user?.email}</p>
             </div>
           )}
-        </div>
+        </button>
       </div>
     </div>
   );
