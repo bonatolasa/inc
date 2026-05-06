@@ -6,6 +6,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Role } from 'src/enums/role.enum';
+import { getRoleDisplayName } from 'src/auth/utils/role.utils';
 import { TasksService } from 'src/tasks/services/tasks.service';
 import { ActivitiesService } from 'src/activities/services/activities.service';
 import { Comment } from '../schemas/comment.schema';
@@ -53,10 +54,7 @@ export class CommentsService {
       notificationTargets.add(creatorId);
     }
 
-    const senderName =
-      currentUser.role?.toLowerCase() === 'project_manager'
-        ? 'Project Manager'
-        : 'Team Member';
+    const senderName = getRoleDisplayName(currentUser.role);
 
     this.notificationEvents.emit(NotificationEvents.COMMENT_CREATED, {
       recipients: Array.from(notificationTargets),
