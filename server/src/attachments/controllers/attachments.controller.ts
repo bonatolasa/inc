@@ -15,6 +15,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { AttachmentsService } from '../services/attachments.service';
+import { getRoleDisplayName } from 'src/auth/utils/role.utils';
 import { NotificationsService } from 'src/notifications/services/notifications.service';
 import { TasksService } from 'src/tasks/services/tasks.service';
 import { ActivitiesService } from 'src/activities/services/activities.service';
@@ -123,9 +124,8 @@ export class AttachmentsController {
         notificationTargets.add(creatorId);
       }
 
-      const userRole = user?.role || '';
-      const senderName =
-        userRole === 'project_manager' ? 'Project Manager' : 'Team Member';
+      const senderName = getRoleDisplayName(user?.role);
+
 
       for (const targetId of notificationTargets) {
         try {
