@@ -164,8 +164,8 @@ const TeamDetails = () => {
                     </div>
                   </div>
                   <div className="flex space-x-2">
-                    {(member.roles as any[] || []).map(role => (
-                      <span key={typeof role === 'string' ? role : role._id} className="px-2 py-0.5 bg-gray-50 text-gray-400 rounded text-[10px] font-bold uppercase tracking-widest border border-gray-100">
+                    {(member.roles as any[] || []).map((role, index) => (
+                      <span key={`${member._id}-${typeof role === 'string' ? role : (role?._id || role?.name || index)}`} className="px-2 py-0.5 bg-gray-50 text-gray-400 rounded text-[10px] font-bold uppercase tracking-widest border border-gray-100">
                         {typeof role === 'string' ? role : role.name}
                       </span>
                     ))}

@@ -34,13 +34,16 @@ export class TeamsService {
     const normalizedActorRoles = actorRoles.map((role) => role.toLowerCase());
     const isProjectManagerCreator = normalizedActorRoles.includes(Role.PROJECT_MANAGER);
 
-    const managerId = isProjectManagerCreator ? actor?.id : createTeamDto.manager;
+    const managerId = isProjectManagerCreator
+      ? actor?.id
+      : (createTeamDto.manager || actor?.id);
     if (!managerId) {
       throw new BadRequestException('Project manager is required');
     }
 
     const manager = await this.usersService.getUserById(managerId);
-    if (!manager.roles?.includes(Role.PROJECT_MANAGER)) {
+    const isSelfManaged = !!actor?.id && managerId === actor.id;
+    if (!isSelfManaged && !manager.roles?.includes(Role.PROJECT_MANAGER)) {
       throw new BadRequestException('Selected manager must have project_manager role');
     }
 

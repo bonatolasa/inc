@@ -8,11 +8,13 @@ import { Loader, Modal, Can } from '../../../common/components';
 import { PERMISSIONS } from '../../../config/permissions.config';
 import { PlusCircle, Info, Users } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
+import { usePermission } from '../../../hooks/usePermission';
 import { getRoleDisplayName } from '../../../utils/roles';
 
 const TeamsList = () => {
   const ITEMS_PER_PAGE = 8;
   const { user, selectedRole } = useAuth();
+  const { hasPermission } = usePermission();
   const [teams, setTeams] = useState<Team[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -37,6 +39,8 @@ const TeamsList = () => {
   const activeRole = (selectedRole || firstUserRole || '').toLowerCase();
   const isAdminLike = activeRole === 'admin' || activeRole === 'super_admin';
   const isProjectManager = activeRole === 'project_manager';
+  const canViewUsers = hasPermission(PERMISSIONS.USERS_VIEW);
+  const canSelectManager = isAdminLike && canViewUsers;
   const currentUserId = (user?._id || (user as any)?.id || '').toString();
 
   const fetchTeams = async () => {
@@ -68,6 +72,14 @@ const TeamsList = () => {
 
   useEffect(() => {
     const fetchAssignableUsers = async () => {
+      if (!canViewUsers) {
+        setManagers([]);
+        setTeamMembers([]);
+        setTesters([]);
+        setUserLoadError('You can create teams, but cannot browse users without users.view permission.');
+        return;
+      }
+
       try {
         const [managerRes, memberRes, testerRes] = await Promise.all([
           userService.getUsersByRole('project_manager'),
@@ -88,7 +100,7 @@ const TeamsList = () => {
     };
 
     fetchAssignableUsers();
-  }, [isAdminLike, currentUserId]);
+  }, [isAdminLike, currentUserId, canViewUsers]);
 
   useEffect(() => {
     if (isProjectManager && currentUserId) {
@@ -112,7 +124,7 @@ const TeamsList = () => {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name) return;
-    if (!formData.manager && !isProjectManager) {
+    if (canSelectManager && !formData.manager) {
       alert('Please select a project manager.');
       return;
     }
@@ -131,7 +143,7 @@ const TeamsList = () => {
       const response = await teamService.createTeam({
         name: formData.name,
         description: formData.description,
-        manager: (isProjectManager ? currentUserId : formData.manager) as any,
+        manager: (canSelectManager ? formData.manager : currentUserId) as any,
         members: combinedMembers as any,
       });
       
@@ -292,7 +304,7 @@ const TeamsList = () => {
 
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">{getRoleDisplayName('project_manager')}</label>
-            {isAdminLike ? (
+            {canSelectManager ? (
               <select
                 required
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium text-gray-700 bg-white"
