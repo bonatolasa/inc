@@ -3,9 +3,8 @@ import { Role } from '../../../types/user.types';
 import { getRoleDisplayName } from '../../../utils/roles';
 import { Modal, Can } from '../../../common/components';
 import { roleService } from '../../../services/role.service';
-import { PERMISSIONS } from '../../../config/permissions.config';
+import { PERMISSION_GROUPS, dedupePermissions } from '../../../config/permission-groups.config';
 import { CheckCircle, ShieldCheck, Trash2, Edit3, Save } from 'lucide-react';
-import { useAuth } from '../../../hooks/useAuth';
 
 interface RoleTableProps {
   roles: Role[];
@@ -24,7 +23,7 @@ const RoleTable: React.FC<RoleTableProps> = ({ roles, onRefresh }) => {
 
   const handleOpenEdit = (role: Role) => {
     setSelectedRole(role);
-    setRolePermissions(role.permissions || []);
+    setRolePermissions(dedupePermissions(role.permissions || []));
     setIsModalOpen(true);
   };
 
@@ -74,108 +73,28 @@ const RoleTable: React.FC<RoleTableProps> = ({ roles, onRefresh }) => {
     }
   };
 
-  const allAvailablePermissions = Object.values(PERMISSIONS);
+  const handleTogglePermission = async (perm: string) => {
+    if (!selectedRole) return;
+    const isSelected = rolePermissions.includes(perm);
+    const nextPermissions = isSelected
+      ? rolePermissions.filter((p) => p !== perm)
+      : dedupePermissions([...rolePermissions, perm]);
 
-  const PERMISSION_GROUPS = {
-    USERS: {
-      label: 'User Management',
-      permissions: [
-        { key: PERMISSIONS.USERS_VIEW, label: 'View Users' },
-        { key: PERMISSIONS.USERS_CREATE, label: 'Create Users' },
-        { key: PERMISSIONS.USERS_UPDATE, label: 'Update Users' },
-        { key: PERMISSIONS.USERS_DELETE, label: 'Delete Users' },
-        { key: PERMISSIONS.USERS_ASSIGN_ROLES, label: 'Assign User Roles' },
-      ]
-    },
-    TEAMS: {
-      label: 'Team Management',
-      permissions: [
-        { key: PERMISSIONS.TEAMS_VIEW, label: 'View Teams' },
-        { key: PERMISSIONS.TEAMS_CREATE, label: 'Create Teams' },
-        { key: PERMISSIONS.TEAMS_UPDATE, label: 'Update Teams' },
-        { key: PERMISSIONS.TEAMS_DELETE, label: 'Delete Teams' },
-      ]
-    },
-    PROJECTS: {
-      label: 'Project Management',
-      permissions: [
-        { key: PERMISSIONS.PROJECTS_VIEW, label: 'View Projects' },
-        { key: PERMISSIONS.PROJECTS_CREATE, label: 'Create Projects' },
-        { key: PERMISSIONS.PROJECTS_UPDATE, label: 'Update Projects' },
-        { key: PERMISSIONS.PROJECTS_DELETE, label: 'Delete Projects' },
-      ]
-    },
-    TASKS: {
-      label: 'Task Management',
-      permissions: [
-        { key: PERMISSIONS.TASKS_VIEW, label: 'View Tasks' },
-        { key: PERMISSIONS.TASKS_CREATE, label: 'Create Tasks' },
-        { key: PERMISSIONS.TASKS_UPDATE, label: 'Update Tasks' },
-        { key: PERMISSIONS.TASKS_DELETE, label: 'Delete Tasks' },
-        { key: PERMISSIONS.TASKS_ASSIGN, label: 'Assign Tasks' },
-        { key: PERMISSIONS.TASKS_TEST_UPDATE, label: 'Test Update Tasks' },
-      ]
-    },
-    ROLES: {
-      label: 'Role Management',
-      permissions: [
-        { key: PERMISSIONS.ROLES_VIEW, label: 'View Roles' },
-        { key: PERMISSIONS.ROLES_CREATE, label: 'Create Roles' },
-        { key: PERMISSIONS.ROLES_UPDATE, label: 'Update Roles' },
-        { key: PERMISSIONS.ROLES_DELETE, label: 'Delete Roles' },
-        { key: PERMISSIONS.ROLES_ASSIGN_PERMISSIONS, label: 'Assign Permissions' },
-      ]
-    },
-    REPORTS: {
-      label: 'Reports',
-      permissions: [
-        { key: PERMISSIONS.REPORTS_VIEW, label: 'View Reports' },
-        { key: PERMISSIONS.REPORTS_EXPORT, label: 'Export Reports' },
-      ]
-    },
-    COMMENTS: {
-      label: 'Comments',
-      permissions: [
-        { key: PERMISSIONS.COMMENTS_VIEW, label: 'View Comments' },
-        { key: PERMISSIONS.COMMENTS_CREATE, label: 'Create Comments' },
-        { key: PERMISSIONS.COMMENTS_DELETE, label: 'Delete Comments' },
-      ]
-    },
-    ATTACHMENTS: {
-      label: 'Attachments',
-      permissions: [
-        { key: PERMISSIONS.ATTACHMENTS_VIEW, label: 'View Attachments' },
-        { key: PERMISSIONS.ATTACHMENTS_UPLOAD, label: 'Upload Attachments' },
-        { key: PERMISSIONS.ATTACHMENTS_DELETE, label: 'Delete Attachments' },
-      ]
-    },
-    NOTIFICATIONS: {
-      label: 'Notifications',
-      permissions: [
-        { key: PERMISSIONS.NOTIFICATIONS_VIEW, label: 'View Notifications' },
-      ]
-    },
-  };
-
-  const persistPermissions = async (nextPermissions: string[]) => {
     setRolePermissions(nextPermissions);
     setIsUpdating(true);
     try {
-      await roleService.updatePermissions(selectedRole!.name, nextPermissions);
+      if (isSelected) {
+        await roleService.removePermissions(selectedRole.name, [perm]);
+      } else {
+        await roleService.addPermissions(selectedRole.name, [perm]);
+      }
+      setSelectedRole((prev) => (prev ? { ...prev, permissions: nextPermissions } : prev));
     } catch (error) {
-      setRolePermissions(selectedRole!.permissions || []);
-      console.error("Failed to update permissions", error);
+      setRolePermissions(selectedRole.permissions || []);
+      console.error('Failed to update permissions', error);
     } finally {
       setIsUpdating(false);
     }
-  };
-
-  const handleTogglePermission = async (perm: string) => {
-    const nextPermissions = rolePermissions.includes(perm)
-      ? rolePermissions.filter(p => p !== perm)
-      : [...rolePermissions, perm];
-
-    await persistPermissions(nextPermissions);
   };
 
   const handleSavePermissions = async () => {
@@ -241,8 +160,8 @@ const RoleTable: React.FC<RoleTableProps> = ({ roles, onRefresh }) => {
       >
         <div className="space-y-6">
           <div className="max-h-96 overflow-y-auto pr-2 space-y-4">
-            {Object.entries(PERMISSION_GROUPS).map(([groupKey, group]) => (
-              <div key={groupKey} className="space-y-2">
+            {PERMISSION_GROUPS.map((group) => (
+              <div key={group.id} className="space-y-2">
                 <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{group.label}</h5>
                 <div className="grid grid-cols-1 gap-2">
                   {group.permissions.map(({ key, label }) => (

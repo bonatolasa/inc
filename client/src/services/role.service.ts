@@ -29,8 +29,42 @@ export const roleService = {
     return response.data;
   },
 
-  updatePermissions: async (roleName: string, permissions: string[]): Promise<ApiResponse<Role>> => {
+  addPermissions: async (roleName: string, permissions: string[]): Promise<ApiResponse<Role>> => {
     const response = await api.patch(API_ENDPOINTS.ROLES.PERMISSIONS(roleName), { permissions });
+    return response.data;
+  },
+
+  removePermissions: async (roleName: string, permissions: string[]): Promise<ApiResponse<Role>> => {
+    const response = await api.delete(API_ENDPOINTS.ROLES.PERMISSIONS(roleName), { data: { permissions } });
+    return response.data;
+  },
+
+  updatePermissions: async (
+    roleName: string,
+    nextPermissions: string[],
+    currentPermissions: string[] = [],
+  ): Promise<ApiResponse<Role>> => {
+    const currentSet = new Set(currentPermissions);
+    const nextSet = new Set(nextPermissions);
+
+    const toAdd = nextPermissions.filter((permission) => !currentSet.has(permission));
+    const toRemove = currentPermissions.filter((permission) => !nextSet.has(permission));
+
+    let latestResponse: ApiResponse<Role> | null = null;
+
+    if (toAdd.length > 0) {
+      latestResponse = await roleService.addPermissions(roleName, toAdd);
+    }
+
+    if (toRemove.length > 0) {
+      latestResponse = await roleService.removePermissions(roleName, toRemove);
+    }
+
+    if (latestResponse) {
+      return latestResponse;
+    }
+
+    const response = await api.get(`${API_ENDPOINTS.ROLES.BASE}/${roleName}`);
     return response.data;
   },
 

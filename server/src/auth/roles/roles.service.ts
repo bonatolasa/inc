@@ -9,7 +9,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { RoleDocument } from './roles.schema';
 import { ROLE_PERMISSIONS, Permissions } from '../constants/permissions.constants';
-import { normalizeRoles } from '../utils/role.utils';
 import { Role } from 'src/enums/role.enum';
 
 @Injectable()
@@ -49,7 +48,13 @@ export class RolesService implements OnModuleInit {
   }
 
   async getPermissionsForRoles(roleNames: Array<string | Role>): Promise<string[]> {
-    const normalized = normalizeRoles(roleNames);
+    const normalized = Array.from(
+      new Set(
+        (roleNames || [])
+          .map((role) => this.normalizeName(String(role)))
+          .filter((role) => !!role),
+      ),
+    );
     if (!normalized.length) {
       return [];
     }
@@ -61,6 +66,17 @@ export class RolesService implements OnModuleInit {
     });
 
     return Array.from(permissionSet);
+  }
+
+  async buildEffectivePermissions(
+    roleNames: Array<string | Role>,
+    directPermissions: string[] = [],
+  ): Promise<string[]> {
+    const rolePermissions = await this.getPermissionsForRoles(roleNames);
+    const normalizedDirectPermissions = (directPermissions || [])
+      .map((p) => p?.toString().trim())
+      .filter((p) => !!p);
+    return Array.from(new Set([...rolePermissions, ...normalizedDirectPermissions]));
   }
 
   async getByName(roleName: string): Promise<RoleDocument | null> {
