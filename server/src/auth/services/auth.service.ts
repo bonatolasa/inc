@@ -42,8 +42,11 @@ export class AuthService {
       role: registerDto.role,
     });
 
-    // Get permissions for all roles
-    const permissions = await this.rolesService.getPermissionsForRoles(user.roles);
+    // Effective permissions = role-based + direct user permissions
+    const permissions = await this.rolesService.buildEffectivePermissions(
+      user.roles,
+      user.permissions || [],
+    );
 
     // Generate token
     const jwtData = { 
@@ -98,8 +101,11 @@ export class AuthService {
     // Update last login
     await this.usersService.updateLastLogin(user._id.toString());
 
-    // Get permissions for all roles
-    const permissions = await this.rolesService.getPermissionsForRoles(user.roles);
+    // Effective permissions = role-based + direct user permissions
+    const permissions = await this.rolesService.buildEffectivePermissions(
+      user.roles,
+      user.permissions || [],
+    );
 
     // Generate token
     const JwtLoginData = {

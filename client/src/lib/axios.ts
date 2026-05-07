@@ -24,8 +24,13 @@ api.interceptors.response.use(
     // which can return a stale route error like "Cannot POST /api/users/invite".
     const safeMethods = ['get', 'head', 'options'];
     const requestMethod = error.config?.method?.toLowerCase();
+    const isNetworkFailure =
+      error?.message === 'Network Error' ||
+      error?.code === 'ERR_NETWORK' ||
+      (!error?.response && !!error?.request);
+
     if (
-      error.message === 'Network Error' &&
+      isNetworkFailure &&
       api.defaults.baseURL === API_BASE_URL &&
       safeMethods.includes(requestMethod)
     ) {

@@ -70,8 +70,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Clear any previously selected role
       localStorage.removeItem('selectedRole');
       setSelectedRole(null);
-      setUser(response.data.user);
-      return { user: response.data.user };
+
+      // Hydrate from /users/me so frontend always gets effective permissions
+      // (role-based + direct) for permission-driven UI gates.
+      const meResponse = await userService.getMe();
+      const hydratedUser = meResponse.success ? meResponse.data : response.data.user;
+      setUser(hydratedUser);
+      return { user: hydratedUser };
     } else {
       throw new Error(response.message || 'Invalid login response from server');
     }
