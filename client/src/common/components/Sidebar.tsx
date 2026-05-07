@@ -28,9 +28,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, setIsOpen }) => {
   
   const hasAccess = (permissions?: PermissionValue[], roles?: string[]) => {
     if (!permissions && !roles) return true;
-    const okPerm = permissions ? hasPermission(permissions) : false;
-    const okRole = roles ? hasRole(roles) : false;
-    return okPerm || okRole;
+    if (permissions && permissions.length > 0) {
+      return hasPermission(permissions);
+    }
+    return roles ? hasRole(roles) : true;
   };
 
    const navItems = [
@@ -80,7 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, setIsOpen }) => {
        name: 'Settings', 
        path: ROUTES.ADMIN_SETTINGS, 
        icon: Settings2,
-       visible: hasAccess([], ['admin', 'super_admin'])
+       visible: hasAccess(undefined, ['admin', 'super_admin'])
      },
    ].filter(item => item.visible);
 
