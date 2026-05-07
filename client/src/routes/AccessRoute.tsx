@@ -11,16 +11,15 @@ interface AccessRouteProps {
 export const AccessRoute = ({ permissions, roles }: AccessRouteProps) => {
   const { hasPermission, hasRole } = usePermission();
 
-  const hasPerm = permissions ? hasPermission(permissions) : false;
-  const hasRol = roles ? hasRole(roles) : false;
-
   if (!permissions && !roles) {
     return <Outlet />;
   }
 
-  if (hasPerm || hasRol) {
-    return <Outlet />;
+  // Permission-first guard:
+  // when permissions are defined, they control access for flexible custom roles.
+  if (permissions) {
+    return hasPermission(permissions) ? <Outlet /> : <Navigate to={ROUTES.UNAUTHORIZED} replace />;
   }
 
-  return <Navigate to={ROUTES.UNAUTHORIZED} replace />;
+  return roles && hasRole(roles) ? <Outlet /> : <Navigate to={ROUTES.UNAUTHORIZED} replace />;
 };
