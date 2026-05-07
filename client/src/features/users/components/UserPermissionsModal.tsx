@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../../../common/components';
-import { PERMISSIONS, type PermissionValue } from '../../../config/permissions.config';
+import { type PermissionValue } from '../../../config/permissions.config';
+import { PERMISSION_GROUPS, dedupePermissions } from '../../../config/permission-groups.config';
 import { Check, Info } from 'lucide-react';
 
 interface UserPermissionsModalProps {
@@ -10,91 +11,6 @@ interface UserPermissionsModalProps {
   currentPermissions: PermissionValue[];
   onSave: (permissions: PermissionValue[]) => Promise<void>;
 }
-
-const PERMISSION_GROUPS = {
-  USERS: {
-    label: 'User Management',
-    permissions: [
-      { key: PERMISSIONS.USERS_VIEW, label: 'View Users' },
-      { key: PERMISSIONS.USERS_CREATE, label: 'Create Users' },
-      { key: PERMISSIONS.USERS_UPDATE, label: 'Update Users' },
-      { key: PERMISSIONS.USERS_DELETE, label: 'Delete Users' },
-      { key: PERMISSIONS.USERS_ASSIGN_ROLES, label: 'Assign User Roles' },
-    ]
-  },
-  TEAMS: {
-    label: 'Team Management',
-    permissions: [
-      { key: PERMISSIONS.TEAMS_VIEW, label: 'View Teams' },
-      { key: PERMISSIONS.TEAMS_CREATE, label: 'Create Teams' },
-      { key: PERMISSIONS.TEAMS_UPDATE, label: 'Update Teams' },
-      { key: PERMISSIONS.TEAMS_DELETE, label: 'Delete Teams' },
-    ]
-  },
-  PROJECTS: {
-    label: 'Project Management',
-    permissions: [
-      { key: PERMISSIONS.PROJECTS_VIEW, label: 'View Projects' },
-      { key: PERMISSIONS.PROJECTS_CREATE, label: 'Create Projects' },
-      { key: PERMISSIONS.PROJECTS_UPDATE, label: 'Update Projects' },
-      { key: PERMISSIONS.PROJECTS_DELETE, label: 'Delete Projects' },
-    ]
-  },
-  TASKS: {
-    label: 'Task Management',
-    permissions: [
-      { key: PERMISSIONS.TASKS_VIEW, label: 'View Tasks' },
-      { key: PERMISSIONS.TASKS_CREATE, label: 'Create Tasks' },
-      { key: PERMISSIONS.TASKS_UPDATE, label: 'Update Tasks' },
-      { key: PERMISSIONS.TASKS_DELETE, label: 'Delete Tasks' },
-      { key: PERMISSIONS.TASKS_ASSIGN, label: 'Assign Tasks' },
-      { key: PERMISSIONS.TASKS_TEST_UPDATE, label: 'Legacy QA Task Update' },
-      { key: PERMISSIONS.TEST_TASK, label: 'Test Task' },
-      { key: PERMISSIONS.REPORT_BUG, label: 'Report Bug' },
-      { key: PERMISSIONS.VERIFY_TASK, label: 'Verify Task' },
-    ]
-  },
-  ROLES: {
-    label: 'Role & Permission Management',
-    permissions: [
-      { key: PERMISSIONS.ROLES_VIEW, label: 'View Roles' },
-      { key: PERMISSIONS.ROLES_CREATE, label: 'Create Roles' },
-      { key: PERMISSIONS.ROLES_UPDATE, label: 'Update Roles' },
-      { key: PERMISSIONS.ROLES_DELETE, label: 'Delete Roles' },
-      { key: PERMISSIONS.ROLES_ASSIGN_PERMISSIONS, label: 'Assign Permissions to Roles' },
-    ]
-  },
-  COMMENTS: {
-    label: 'Comments',
-    permissions: [
-      { key: PERMISSIONS.COMMENTS_CREATE, label: 'Create Comments' },
-      { key: PERMISSIONS.COMMENTS_VIEW, label: 'View Comments' },
-      { key: PERMISSIONS.COMMENTS_DELETE, label: 'Delete Comments' },
-    ]
-  },
-  ATTACHMENTS: {
-    label: 'Attachments',
-    permissions: [
-      { key: PERMISSIONS.ATTACHMENTS_UPLOAD, label: 'Upload Attachments' },
-      { key: PERMISSIONS.ATTACHMENTS_VIEW, label: 'View Attachments' },
-      { key: PERMISSIONS.ATTACHMENTS_DELETE, label: 'Delete Attachments' },
-    ]
-  },
-  REPORTS: {
-    label: 'Reports & Analytics',
-    permissions: [
-      { key: PERMISSIONS.REPORTS_VIEW, label: 'View Reports Dashboard' },
-      { key: PERMISSIONS.REPORTS_EXPORT, label: 'Export Reports' },
-    ]
-  },
-  SYSTEM: {
-    label: 'System',
-    permissions: [
-      { key: PERMISSIONS.PERMISSIONS_VIEW, label: 'View All Permissions' },
-      { key: PERMISSIONS.NOTIFICATIONS_VIEW, label: 'View Notifications' },
-    ]
-  }
-};
 
 const UserPermissionsModal: React.FC<UserPermissionsModalProps> = ({
   isOpen,
@@ -109,19 +25,20 @@ const UserPermissionsModal: React.FC<UserPermissionsModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setSelectedPermissions(currentPermissions || []);
+      setSelectedPermissions(dedupePermissions(currentPermissions || []));
       setError(null);
     }
   }, [isOpen, currentPermissions]);
 
   const persistPermissions = async (nextPermissions: PermissionValue[]) => {
-    setSelectedPermissions(nextPermissions);
+    const normalized = dedupePermissions(nextPermissions);
+    setSelectedPermissions(normalized);
     setIsSaving(true);
     setError(null);
     try {
-      await onSave(nextPermissions);
+      await onSave(normalized);
     } catch (err) {
-      setSelectedPermissions(currentPermissions || []);
+      setSelectedPermissions(dedupePermissions(currentPermissions || []));
       const message = err instanceof Error ? err.message : 'Failed to save permissions';
       setError(message);
     } finally {
@@ -138,7 +55,7 @@ const UserPermissionsModal: React.FC<UserPermissionsModalProps> = ({
   };
 
   const handleClose = () => {
-    setSelectedPermissions(currentPermissions || []);
+    setSelectedPermissions(dedupePermissions(currentPermissions || []));
     setError(null);
     onClose();
   };
@@ -182,13 +99,13 @@ const UserPermissionsModal: React.FC<UserPermissionsModalProps> = ({
 
         {/* Permission Groups */}
         <div className="space-y-6 max-h-96 overflow-y-auto pr-2">
-          {Object.entries(PERMISSION_GROUPS).map(([groupKey, group]) => {
+          {PERMISSION_GROUPS.map((group) => {
             const groupPermissions = group.permissions.map(p => p.key);
             const allSelected = groupPermissions.every(p => selectedPermissions.includes(p));
             const noneSelected = groupPermissions.every(p => !selectedPermissions.includes(p));
             
             return (
-              <div key={groupKey} className="border border-gray-200 rounded-xl p-4">
+              <div key={group.id} className="border border-gray-200 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">{group.label}</h3>
                   <div className="flex space-x-2">

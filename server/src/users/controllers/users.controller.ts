@@ -37,12 +37,10 @@ export class UsersController {
      @CurrentUser() user: { id: string },
    ): Promise<SingleUserResponseDto> {
      const userData = await this.usersService.getUserById(user.id);
-     // Compute full permissions from both roles and direct assignments
-     const permissions = await this.rolesService.getPermissionsForRoles(userData.roles);
-     const directPermissions = userData.permissions || [];
-     
-     // Combine: role permissions + direct permissions (with deduplication)
-     const combinedPermissions = Array.from(new Set([...permissions, ...directPermissions]));
+     const combinedPermissions = await this.rolesService.buildEffectivePermissions(
+       userData.roles,
+       userData.permissions || [],
+     );
      
      return {
        success: true,
