@@ -3,18 +3,16 @@ import {
   Get,
   Param,
   Query,
-  UseGuards,
-  ParseIntPipe,
 } from '@nestjs/common';
 import { ForbiddenException } from '@nestjs/common';
 import { Type } from 'class-transformer';
 import { IsDate, IsOptional } from 'class-validator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { ReportsService } from '../services/reports.service';
 import { Role } from 'src/enums/role.enum';
-import { Roles } from 'src/auth/decorators/roles.decorator';
+import { authorize } from 'src/auth/decorators/authorize.decorator';
+import { Permissions } from 'src/auth/constants/permissions.constants';
 import {
   DashboardStatsResponseDto,
   ProjectPerformanceResponseDto,
@@ -34,13 +32,11 @@ class TimeTrackingQueryDto {
   @IsOptional()
   endDate?: Date;
 }
-@Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.PROJECT_MANAGER, Role.TESTER, Role.TEAM_MEMBER)
-@UseGuards(RolesGuard)
-@JwtAuthGuard()
 @Controller('reports')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) { }
 
+  @authorize(Permissions.REPORTS_VIEW)
   @Get('dashboard')
   async getDashboardStats(): Promise<DashboardStatsResponseDto> {
     const stats = await this.reportsService.getDashboardStats();
@@ -51,6 +47,7 @@ export class ReportsController {
     };
   }
 
+  @authorize(Permissions.REPORTS_VIEW)
   @Get('manager-dashboard')
   async getManagerDashboardStats(
     @CurrentUser() user: { id: string },
@@ -63,6 +60,7 @@ export class ReportsController {
     };
   }
 
+  @authorize(Permissions.REPORTS_VIEW)
   @Get('project-performance/:projectId')
   async getProjectPerformance(
     @Param('projectId') projectId: string,
@@ -76,10 +74,8 @@ export class ReportsController {
     };
   }
 
+  @authorize(Permissions.REPORTS_VIEW)
   @Get('user-performance/:userId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.PROJECT_MANAGER, Role.TESTER, Role.TEAM_MEMBER)
-  @UseGuards(RolesGuard)
-  @JwtAuthGuard()
   async getUserPerformance(
     @Param('userId') userId: string,
     @CurrentUser() user: { id: string; roles?: string[] },
@@ -95,7 +91,7 @@ export class ReportsController {
       message: 'User performance retrieved successfully',
     };
   }
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.PROJECT_MANAGER, Role.TESTER, Role.TEAM_MEMBER)
+  @authorize(Permissions.REPORTS_VIEW)
   @Get('team-performance/:teamId')
   async getTeamPerformance(
     @Param('teamId') teamId: string,
@@ -108,6 +104,7 @@ export class ReportsController {
     };
   }
 
+  @authorize(Permissions.REPORTS_VIEW)
   @Get('team-workload/:teamId')
   async getTeamWorkload(@Param('teamId') teamId: string): Promise<any> {
     const workload = await this.reportsService.getTeamWorkload(teamId);
@@ -118,6 +115,7 @@ export class ReportsController {
     };
   }
 
+  @authorize(Permissions.REPORTS_VIEW)
   @Get('task-status-distribution')
   async getTaskStatusDistribution(): Promise<StatusDistributionResponseDto> {
     const distribution = await this.reportsService.getTaskStatusDistribution();
@@ -128,6 +126,7 @@ export class ReportsController {
     };
   }
 
+  @authorize(Permissions.REPORTS_VIEW)
   @Get('project-status-distribution')
   async getProjectStatusDistribution(): Promise<StatusDistributionResponseDto> {
     const distribution =
@@ -139,6 +138,7 @@ export class ReportsController {
     };
   }
 
+  @authorize(Permissions.REPORTS_VIEW)
   @Get('time-tracking')
   async getTimeTrackingReport(
     @Query() query: TimeTrackingQueryDto,
