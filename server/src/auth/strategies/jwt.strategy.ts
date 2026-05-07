@@ -43,7 +43,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (user) {
       userRoles = user.roles;
-      userPermissions = await this.rolesService.getPermissionsForRoles(userRoles);
+      userPermissions = await this.rolesService.buildEffectivePermissions(
+        userRoles,
+        user.permissions || [],
+      );
     }
 
     this.logger.log(`Validated user: ${user.email}, roles: ${JSON.stringify(userRoles)}`);
