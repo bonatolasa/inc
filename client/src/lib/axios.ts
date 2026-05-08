@@ -21,6 +21,10 @@ api.interceptors.response.use(
   async (error) => {
     const safeMethods = ['get', 'head', 'options'];
     const requestMethod = error.config?.method?.toLowerCase();
+    const requestUrl = error.config?.url || '';
+    const isLoginRequest =
+      requestMethod === 'post' &&
+      (requestUrl.endsWith('/auth/login') || requestUrl === '/auth/login');
     const isNetworkFailure =
       error?.message === 'Network Error' ||
       error?.code === 'ERR_NETWORK' ||
@@ -32,7 +36,7 @@ api.interceptors.response.use(
       originalRequest &&
       !originalRequest.__deployedFallbackTried &&
       api.defaults.baseURL === API_BASE_URL &&
-      safeMethods.includes(requestMethod)
+      (safeMethods.includes(requestMethod) || isLoginRequest)
     ) {
       console.warn('Local API unreachable, falling back to deployed API...');
       api.defaults.baseURL = API_DEPLOYED;
