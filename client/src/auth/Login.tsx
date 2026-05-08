@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { ROUTES } from '../config/routes.config';
 import { RoleSelectionModal } from '../features/auth/components/RoleSelectionModal';
+import { API_BASE_URL } from '../config/api.config';
 
 const Login = () => {
   const { login, logout, setSelectedRole } = useAuth();
@@ -49,7 +50,16 @@ const Login = () => {
       }
     } catch (err: any) {
       console.error("Login failed caught in UI:", err);
-      setError(err.message || err.response?.data?.message || 'Failed to login');
+      const isNetworkFailure =
+        err?.message === 'Network Error' ||
+        err?.code === 'ERR_NETWORK' ||
+        (!err?.response && !!err?.request);
+
+      if (isNetworkFailure) {
+        setError(`Cannot connect to API. Local server (${API_BASE_URL}) is unavailable and deployed fallback could not be reached.`);
+      } else {
+        setError(err.response?.data?.message || err.message || 'Failed to login');
+      }
     } finally {
       setLoading(false);
     }

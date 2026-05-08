@@ -19,32 +19,28 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // Only fallback to deployed API for safe idempotent requests.
-    // Avoid retrying local POST/PUT/PATCH/DELETE requests against the deployed API,
-    // which can return a stale route error like "Cannot POST /api/users/invite".
     const safeMethods = ['get', 'head', 'options'];
     const requestMethod = error.config?.method?.toLowerCase();
     const isNetworkFailure =
       error?.message === 'Network Error' ||
       error?.code === 'ERR_NETWORK' ||
       (!error?.response && !!error?.request);
+    const originalRequest = error.config as any;
 
     if (
       isNetworkFailure &&
+      originalRequest &&
+      !originalRequest.__deployedFallbackTried &&
       api.defaults.baseURL === API_BASE_URL &&
       safeMethods.includes(requestMethod)
     ) {
       console.warn('Local API unreachable, falling back to deployed API...');
       api.defaults.baseURL = API_DEPLOYED;
-      
-      // Update the current request to use the deployed URL
-      const originalRequest = error.config;
       originalRequest.baseURL = API_DEPLOYED;
-      
-      // Retry the requested call
+      originalRequest.__deployedFallbackTried = true;
       return api(originalRequest);
     }
-    
+
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
