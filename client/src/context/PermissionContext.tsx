@@ -69,9 +69,6 @@ export const PermissionProvider = ({ children }: { children: ReactNode }) => {
   const hasPermission = (permission: PermissionValue | PermissionValue[]): boolean => {
     if (!user) return false;
 
-    // Super Admin and Admin get everything (also enforced server-side)
-    if (hasRole(['super_admin', 'admin'])) return true;
-
     const userPermissions = getUserPermissions();
 
     if (userPermissions.includes('ALL') || userPermissions.includes('*')) return true;

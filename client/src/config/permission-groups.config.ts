@@ -28,6 +28,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     label: 'Team Management',
     permissions: [
       { key: PERMISSIONS.TEAMS_VIEW, label: 'View Teams' },
+      { key: PERMISSIONS.TEAMS_VIEW_ALL, label: 'View All Teams' },
       { key: PERMISSIONS.TEAMS_CREATE, label: 'Create Teams' },
       { key: PERMISSIONS.TEAMS_UPDATE, label: 'Update Teams' },
       { key: PERMISSIONS.TEAMS_DELETE, label: 'Delete Teams' },
@@ -38,6 +39,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     label: 'Project Management',
     permissions: [
       { key: PERMISSIONS.PROJECTS_VIEW, label: 'View Projects' },
+      { key: PERMISSIONS.PROJECTS_VIEW_ALL, label: 'View All Projects' },
       { key: PERMISSIONS.PROJECTS_CREATE, label: 'Create Projects' },
       { key: PERMISSIONS.PROJECTS_UPDATE, label: 'Update Projects' },
       { key: PERMISSIONS.PROJECTS_DELETE, label: 'Delete Projects' },
@@ -48,6 +50,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     label: 'Task Management',
     permissions: [
       { key: PERMISSIONS.TASKS_VIEW, label: 'View Tasks' },
+      { key: PERMISSIONS.TASKS_VIEW_ALL, label: 'View All Tasks' },
       { key: PERMISSIONS.TASKS_CREATE, label: 'Create Tasks' },
       { key: PERMISSIONS.TASKS_UPDATE, label: 'Update Tasks' },
       { key: PERMISSIONS.TASKS_DELETE, label: 'Delete Tasks' },

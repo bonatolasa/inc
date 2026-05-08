@@ -8,18 +8,21 @@ export const PERMISSIONS = {
 
   // Teams
   TEAMS_VIEW: 'teams.view',
+  TEAMS_VIEW_ALL: 'teams.view.all',
   TEAMS_CREATE: 'teams.create',
   TEAMS_UPDATE: 'teams.update',
   TEAMS_DELETE: 'teams.delete',
 
   // Projects
   PROJECTS_VIEW: 'projects.view',
+  PROJECTS_VIEW_ALL: 'projects.view.all',
   PROJECTS_CREATE: 'projects.create',
   PROJECTS_UPDATE: 'projects.update',
   PROJECTS_DELETE: 'projects.delete',
 
   // Tasks
   TASKS_VIEW: 'tasks.view',
+  TASKS_VIEW_ALL: 'tasks.view.all',
   TASKS_CREATE: 'tasks.create',
   TASKS_UPDATE: 'tasks.update',
   TASKS_DELETE: 'tasks.delete',
