@@ -37,8 +37,19 @@ export class ProjectsController {
     roles: [Role.ADMIN, Role.PROJECT_MANAGER],
   })
   @Get()
-  async findAll(): Promise<ProjectListResponseDto> {
-    const projects = await this.projectsService.findAll();
+  async findAll(
+    @CurrentUser() user: { id: string; roles?: string[]; permissions?: string[] },
+  ): Promise<ProjectListResponseDto> {
+    const roles = (user.roles || []).map((r) => r.toLowerCase());
+    const permissions = user.permissions || [];
+    const canViewAll =
+      roles.includes(Role.SUPER_ADMIN) ||
+      roles.includes(Role.ADMIN) ||
+      permissions.includes(Permissions.PROJECTS_VIEW_ALL);
+
+    const projects = canViewAll
+      ? await this.projectsService.findAll()
+      : await this.projectsService.findVisibleByUser(user.id);
     return {
       success: true,
       data: projects,

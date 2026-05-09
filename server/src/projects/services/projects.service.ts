@@ -75,6 +75,30 @@ export class ProjectsService {
     return projects.map((project) => this.mapToResponseDto(project));
   }
 
+  async findVisibleByUser(userId: string): Promise<ProjectResponseDto[]> {
+    const teams = await this.teamsService.getTeamsByMember(userId);
+    const teamIds = teams.map((team) => team._id);
+    const projects = await this.projectModel
+      .find({
+        $or: [
+          { createdBy: userId },
+          { team: { $in: teamIds } },
+        ],
+      })
+      .populate({
+        path: 'team',
+        select: 'name members',
+        populate: {
+          path: 'members',
+          select: 'name email',
+        },
+      })
+      .populate('createdBy', 'name email')
+      .exec();
+
+    return projects.map((project) => this.mapToResponseDto(project));
+  }
+
   async findById(id: string): Promise<ProjectResponseDto> {
     if (!id || id === 'contributor' || id.length < 24) {
        throw new BadRequestException('Invalid Project ID');
