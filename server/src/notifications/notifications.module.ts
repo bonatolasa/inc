@@ -8,9 +8,11 @@ import { NotificationsService } from './services/notifications.service';
 import { NotificationsController } from './controllers/notifications.controller';
 import { NotificationEventsService } from './services/notification-events.service';
 import { NotificationListenerService } from './services/notification-listener.service';
+import { RolesModule } from 'src/auth/roles/roles.module';
 
 @Module({
   imports: [
+    RolesModule,
     MongooseModule.forFeature([
       { name: Notification.name, schema: NotificationSchema },
     ]),

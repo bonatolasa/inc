@@ -12,6 +12,23 @@ export class NotificationsService {
   ) {}
 
   async create(createDto: CreateNotificationDto): Promise<Notification> {
+    const dedupeWindowMs = 90 * 1000;
+    const since = new Date(Date.now() - dedupeWindowMs);
+    const duplicate = await this.notificationModel
+      .findOne({
+        userId: createDto.userId,
+        type: createDto.type,
+        relatedId: createDto.relatedId || null,
+        title: createDto.title,
+        message: createDto.message,
+        createdAt: { $gte: since },
+      })
+      .sort({ createdAt: -1 })
+      .exec();
+    if (duplicate) {
+      return duplicate;
+    }
+
     const notification = new this.notificationModel(createDto);
     return notification.save();
   }
