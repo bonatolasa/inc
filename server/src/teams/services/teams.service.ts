@@ -99,6 +99,18 @@ export class TeamsService {
     return Promise.all(teams.map((team) => this.mapToResponseDto(team)));
   }
 
+  async findVisibleByUser(userId: string): Promise<TeamResponseDto[]> {
+    const teams = await this.teamModel
+      .find({
+        $or: [{ manager: userId }, { members: userId }],
+      })
+      .populate('manager', 'name email role')
+      .populate('members', 'name email role')
+      .exec();
+
+    return Promise.all(teams.map((team) => this.mapToResponseDto(team)));
+  }
+
   async findById(id: string): Promise<TeamResponseDto> {
     const team = await this.teamModel
       .findById(id)

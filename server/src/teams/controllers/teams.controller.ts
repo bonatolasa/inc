@@ -32,8 +32,19 @@ export class TeamsController {
     permissions: [Permissions.TEAMS_VIEW],
   })
   @Get()
-  async findAll(): Promise<TeamListResponseDto> {
-    const teams = await this.teamsService.findAll();
+  async findAll(
+    @CurrentUser() user: { id: string; roles?: string[]; permissions?: string[] },
+  ): Promise<TeamListResponseDto> {
+    const roles = (user.roles || []).map((r) => r.toLowerCase());
+    const permissions = user.permissions || [];
+    const canViewAll =
+      roles.includes(Role.SUPER_ADMIN) ||
+      roles.includes(Role.ADMIN) ||
+      permissions.includes(Permissions.TEAMS_VIEW_ALL);
+
+    const teams = canViewAll
+      ? await this.teamsService.findAll()
+      : await this.teamsService.findVisibleByUser(user.id);
     return { success: true, data: teams, message: 'Teams retrieved successfully' };
   }
 
