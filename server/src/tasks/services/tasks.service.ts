@@ -89,6 +89,10 @@ export class TasksService {
     return tasks.map((task) => this.mapToResponseDto(task));
   }
 
+  async findVisibleByUser(userId: string): Promise<TaskResponseDto[]> {
+    return this.getTasksByUser(userId);
+  }
+
   async findByProject(projectId: string): Promise<TaskResponseDto[]> {
     const tasks = await this.taskModel
       .find({ project: projectId })
@@ -146,6 +150,7 @@ export class TasksService {
     }
 
     const oldAssignees = (task.assignedTo || []).map(a => a.toString());
+    const previousStatus = task.status;
     const updated = await this.taskModel
       .findByIdAndUpdate(id, updateTaskDto, {
         new: true,
@@ -174,6 +179,31 @@ export class TasksService {
       type: 'task.updated',
       relatedId: updated._id.toString(),
     });
+
+    const newStatus = updated.status;
+    if (previousStatus !== newStatus && newStatus === TaskStatus.IN_REVIEW) {
+      this.notificationEvents.emit(NotificationEvents.TASK_TESTING_REQUESTED, {
+        recipients,
+        title: 'Testing Requested',
+        message: `Task "${updated.title}" is ready for QA review`,
+        type: 'task.testing_requested',
+        relatedId: updated._id.toString(),
+      });
+    }
+
+    if (
+      previousStatus !== newStatus &&
+      newStatus === TaskStatus.BLOCKED &&
+      (previousStatus === TaskStatus.COMPLETED || previousStatus === TaskStatus.IN_REVIEW)
+    ) {
+      this.notificationEvents.emit(NotificationEvents.TASK_BUG_REOPENED, {
+        recipients,
+        title: 'Bug Reopened',
+        message: `Task "${updated.title}" was reopened due to a reported issue`,
+        type: 'task.bug_reopened',
+        relatedId: updated._id.toString(),
+      });
+    }
 
     const newlyAssigned = newAssignees.filter(id => !oldAssignees.includes(id));
     if (newlyAssigned.length > 0) {

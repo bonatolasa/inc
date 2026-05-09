@@ -69,10 +69,26 @@ export class TasksController {
     roles: [Role.TEAM_MEMBER, Role.PROJECT_MANAGER, Role.ADMIN, Role.TESTER],
   })
   @Get()
-  async findAll(@Query('projectId') projectId?: string): Promise<TaskListResponseDto> {
+  async findAll(
+    @Query('projectId') projectId?: string,
+    @CurrentUser() user?: { id: string; roles?: string[]; permissions?: string[] },
+  ): Promise<TaskListResponseDto> {
+    const roles = (user?.roles || []).map((r) => r.toLowerCase());
+    const permissions = user?.permissions || [];
+    const canViewAll =
+      roles.includes(Role.SUPER_ADMIN) ||
+      roles.includes(Role.ADMIN) ||
+      permissions.includes(Permissions.TASKS_VIEW_ALL);
+
     const tasks = projectId
-      ? await this.tasksService.findByProject(projectId)
-      : await this.tasksService.findAll();
+      ? canViewAll
+        ? await this.tasksService.findByProject(projectId)
+        : (await this.tasksService.findByProject(projectId)).filter((task) =>
+            (task.assignedTo || []).some((assignee) => assignee._id === user!.id),
+          )
+      : canViewAll
+        ? await this.tasksService.findAll()
+        : await this.tasksService.findVisibleByUser(user!.id);
     return {
       success: true,
       data: tasks,
