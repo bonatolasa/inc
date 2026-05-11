@@ -30,21 +30,33 @@ export class RolesService implements OnModuleInit {
       [Role.TEAM_MEMBER]: 'Team Member',
     };
 
+    const seedEntries = Object.entries(ROLE_PERMISSIONS);
+    const seedRoleNames = seedEntries.map(([role]) => role);
+    const existingRoles = await this.roleModel
+      .find({ name: { $in: seedRoleNames } })
+      .select('name')
+      .lean();
+    const existingRoleNames = new Set(existingRoles.map((role) => role.name));
+
     await Promise.all(
-      Object.entries(ROLE_PERMISSIONS).map(async ([role, permissions]) => {
-        const displayName = DEFAULT_DISPLAY_NAMES[role] || role.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-        await this.roleModel.findOneAndUpdate(
-          { name: role },
-          { 
-            name: role, 
+      seedEntries
+        .filter(([role]) => !existingRoleNames.has(role))
+        .map(async ([role, permissions]) => {
+          const displayName =
+            DEFAULT_DISPLAY_NAMES[role] ||
+            role
+              .split('_')
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+
+          await this.roleModel.create({
+            name: role,
             displayName,
-            permissions: Array.from(new Set(permissions)) 
-          },
-          { upsert: true, new: true },
-        );
-      }),
+            permissions: Array.from(new Set(permissions)),
+          });
+        }),
     );
-    this.logger.log('Default roles and permissions ensured');
+    this.logger.log('Default roles seeded (create-if-missing only)');
   }
 
   async getPermissionsForRoles(roleNames: Array<string | Role>): Promise<string[]> {
