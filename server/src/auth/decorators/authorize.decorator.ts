@@ -16,9 +16,9 @@ export function authorize(
 ): MethodDecorator & ClassDecorator {
   let metadata: AccessControlMetadata;
   if (typeof args[0] === 'object' && !Array.isArray(args[0])) {
-    metadata = { requireAll: false, ...args[0] };
+    metadata = { requireAll: true, ...args[0] };
   } else {
-    metadata = { permissions: args as string[], requireAll: false };
+    metadata = { permissions: args as string[], requireAll: true };
   }
 
   return applyDecorators(
