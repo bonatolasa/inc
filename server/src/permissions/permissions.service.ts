@@ -18,14 +18,20 @@ export class PermissionsService implements OnModuleInit {
 
   async onModuleInit() {
     const values = Array.from(new Set(Object.values(Permissions)));
-    await Promise.all(
-      values.map((permission) =>
-        this.permissionModel.findOneAndUpdate(
-          { name: permission },
-          { name: permission },
-          { upsert: true, new: true },
-        ),
-      ),
+    const existingPermissions = await this.permissionModel
+      .find({ name: { $in: values } })
+      .select('name')
+      .lean();
+    const existingNames = new Set(existingPermissions.map((permission) => permission.name));
+
+    const missingPermissions = values.filter((permission) => !existingNames.has(permission));
+    if (!missingPermissions.length) {
+      return;
+    }
+
+    await this.permissionModel.insertMany(
+      missingPermissions.map((name) => ({ name })),
+      { ordered: false },
     );
   }
 
