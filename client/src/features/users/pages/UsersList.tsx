@@ -29,17 +29,25 @@ const UsersList = () => {
   const fetchData = async (targetPage: number = page) => {
     setLoading(true);
     try {
-      const [usersRes, rolesRes] = await Promise.all([
-        userService.getAllUsers(targetPage, limit),
-        roleService.getAllRoles()
-      ]);
-
+      const usersRes = await userService.getAllUsers(targetPage, limit);
       if (usersRes.success) {
         setUsers(usersRes.data || []);
         setTotalUsers(usersRes.total || usersRes.data?.length || 0);
         setPage(usersRes.page || targetPage);
       }
-      if (rolesRes.success) setRoles(rolesRes.data);
+
+      try {
+        const rolesRes = await roleService.getAllRoles();
+        if (rolesRes.success) setRoles(rolesRes.data || []);
+      } catch (rolesError: any) {
+        const status = rolesError?.response?.status;
+        if (status === 403) {
+          // Some roles can manage users but are not allowed to list all roles.
+          setRoles([]);
+        } else {
+          console.error('Failed to fetch roles for user form', rolesError);
+        }
+      }
     } catch (error) {
       console.error("Failed to fetch user list data", error);
     } finally {
