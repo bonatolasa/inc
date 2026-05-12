@@ -186,7 +186,7 @@ export class TasksController {
 
   @authorize({
     permissions: [Permissions.TASKS_VIEW],
-    roles: [Role.PROJECT_MANAGER, Role.ADMIN],
+    roles: [Role.PROJECT_MANAGER, Role.ADMIN, Role.TEAM_MEMBER, Role.TESTER],
   })
   @Get('project/:projectId')
   async getTasksByProject(@Param('projectId') projectId: string): Promise<TaskListResponseDto> {

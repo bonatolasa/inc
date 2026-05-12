@@ -17,6 +17,8 @@ const TasksList = () => {
   const { hasRole } = usePermission();
   const isTeamMember = hasRole('team_member');
   const isTester = hasRole('tester');
+  const isProjectManager = hasRole('project_manager');
+  const isAdminLike = hasRole(['admin', 'super_admin']);
   const currentUserId = (user?._id || (user as any)?.id || '').toString();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,21 +47,68 @@ const TasksList = () => {
     setLoading(true);
     try {
       if (isTester) {
-        const projectsRes = await projectService.getProjectsByContributor(currentUserId);
+        const [myTasksRes, projectsRes] = await Promise.all([
+          taskService.getMyTasks(),
+          currentUserId
+            ? projectService.getProjectsByContributor(currentUserId)
+            : Promise.resolve({ success: true, data: [] as Project[] }),
+        ]);
+
         const assignedProjects = projectsRes.success ? projectsRes.data : [];
         setProjects(assignedProjects);
 
-        const taskResponses = await Promise.all(
-          assignedProjects.map((project) => taskService.getTasksByProject(project._id)),
-        );
-        const mergedTasks = taskResponses
+        const taskResponses = assignedProjects.length
+          ? await Promise.all(
+              assignedProjects.map((project) => taskService.getTasksByProject(project._id)),
+            )
+          : [];
+
+        const projectTasks = taskResponses
           .filter((res) => res.success)
           .flatMap((res) => res.data);
+        const myTasks = myTasksRes.success ? myTasksRes.data : [];
+
         const uniqueTasks = Array.from(
-          new Map(mergedTasks.map((t) => [t._id, t])).values(),
+          new Map([...myTasks, ...projectTasks].map((t) => [t._id, t])).values(),
         );
         setTasks(uniqueTasks);
-      } else {
+      } else if (isTeamMember) {
+        const [tasksRes, projectsRes] = await Promise.all([
+          taskService.getMyTasks(),
+          currentUserId
+            ? projectService.getProjectsByContributor(currentUserId)
+            : Promise.resolve({ success: true, data: [] as Project[] }),
+        ]);
+
+        if (tasksRes.success) setTasks(tasksRes.data);
+        if (projectsRes.success) setProjects(projectsRes.data);
+      } else if (isProjectManager) {
+        const [myTasksRes, projectsRes] = await Promise.all([
+          taskService.getMyTasks(),
+          currentUserId
+            ? projectService.getProjectsByManager(currentUserId)
+            : Promise.resolve({ success: true, data: [] as Project[] }),
+        ]);
+
+        const managedProjects = projectsRes.success ? projectsRes.data : [];
+        setProjects(managedProjects);
+
+        const taskResponses = managedProjects.length
+          ? await Promise.all(
+              managedProjects.map((project) => taskService.getTasksByProject(project._id)),
+            )
+          : [];
+
+        const projectTasks = taskResponses
+          .filter((res) => res.success)
+          .flatMap((res) => res.data);
+        const myTasks = myTasksRes.success ? myTasksRes.data : [];
+
+        const uniqueTasks = Array.from(
+          new Map([...myTasks, ...projectTasks].map((t) => [t._id, t])).values(),
+        );
+        setTasks(uniqueTasks);
+      } else if (isAdminLike) {
         const [tasksRes, projectsRes] = await Promise.all([
           taskService.getAllTasks(),
           projectService.getAllProjects()
@@ -67,13 +116,17 @@ const TasksList = () => {
 
         if (tasksRes.success) setTasks(tasksRes.data);
         if (projectsRes.success) setProjects(projectsRes.data);
+      } else {
+        const tasksRes = await taskService.getMyTasks();
+        if (tasksRes.success) setTasks(tasksRes.data);
+        setProjects([]);
       }
     } catch (error) {
       console.error("Failed to fetch task related data", error);
     } finally {
       setLoading(false);
     }
-  }, [isTester, currentUserId]);
+  }, [isTester, isTeamMember, isProjectManager, isAdminLike, currentUserId]);
 
   useEffect(() => {
     fetchData();
@@ -121,7 +174,7 @@ const TasksList = () => {
       title: task.title,
       description: task.description || '',
       projectId: pId,
-      assignedTo: task.assignedTo.map(u => u._id),
+      assignedTo: task.assignedTo.map((u: any) => (typeof u === 'string' ? u : u._id)),
       priority: task.priority,
       dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
       status: task.status,

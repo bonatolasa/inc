@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { taskService } from '../../../services/task.service';
 import { Task } from '../../../types/task.types';
-import { User as UserType } from '../../../types/user.types';
 import { Loader } from '../../../common/components';
 import { usePermission } from '../../../hooks/usePermission';
 import { PERMISSIONS } from '../../../config/permissions.config';
@@ -88,7 +87,18 @@ const TaskDetails = () => {
   if (loading) return <Loader />;
   if (!task) return <div className="p-8 text-center text-red-500 font-bold">Task not found.</div>;
 
-  const assignees = Array.isArray(task.assignedTo) ? (task.assignedTo as any[]) : [];
+  const assignees: Array<{ _id: string; name: string; email: string }> = Array.isArray(task.assignedTo)
+    ? (task.assignedTo as any[]).map((assignee) => {
+        if (typeof assignee === 'string') {
+          return { _id: assignee, name: `User ${assignee.slice(-4)}`, email: '' };
+        }
+        return {
+          _id: assignee?._id || '',
+          name: assignee?.name || `User ${(assignee?._id || '').toString().slice(-4)}`,
+          email: assignee?.email || '',
+        };
+      })
+    : [];
 
   return (
     <div className="space-y-8">
@@ -206,11 +216,11 @@ const TaskDetails = () => {
                 {assignees.map((user, idx) => (
                     <div key={user._id || idx} className="flex items-center space-x-4 p-4 bg-slate-50 rounded-2xl border border-gray-100 group hover:border-primary/30 transition-all">
                         <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md shadow-primary/10">
-                            {user.name?.charAt(0).toUpperCase()}
+                            {user.name?.charAt(0)?.toUpperCase() || 'U'}
                         </div>
                         <div className="overflow-hidden">
                             <p className="font-bold text-gray-900 text-sm truncate">{user.name}</p>
-                            <p className="text-[10px] text-gray-400 font-bold truncate">{user.email}</p>
+                            <p className="text-[10px] text-gray-400 font-bold truncate">{user.email || 'No email available'}</p>
                         </div>
                     </div>
                 ))}

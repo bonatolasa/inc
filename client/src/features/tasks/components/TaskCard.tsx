@@ -27,6 +27,7 @@ const getPriorityColor = (priority: string) => {
 const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) => {
   const { hasRole } = usePermission();
   const isTeamMember = hasRole('team_member');
+  const assignees = Array.isArray(task.assignedTo) ? (task.assignedTo as any[]) : [];
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-100 group">
@@ -45,17 +46,19 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) => {
       
       <div className="flex items-center justify-between mb-4 mt-2 pr-1">
         <div className="flex -space-x-2">
-            {(Array.isArray(task.assignedTo) ? task.assignedTo : []).slice(0, 3).map((u, i) => (
-                <div key={i} className="w-8 h-8 rounded-full bg-white border-2 border-gray-50 flex items-center justify-center text-[10px] font-black text-primary shadow-sm" title={u.name}>
-                    {u.name.charAt(0).toUpperCase()}
+            {assignees.slice(0, 3).map((u, i) => {
+                const name = typeof u === 'string' ? `User ${u.slice(-4)}` : (u?.name || `User ${(u?._id || '').toString().slice(-4)}`);
+                return (
+                <div key={i} className="w-8 h-8 rounded-full bg-white border-2 border-gray-50 flex items-center justify-center text-[10px] font-black text-primary shadow-sm" title={name}>
+                    {(name.charAt(0) || 'U').toUpperCase()}
                 </div>
-            ))}
-            {(Array.isArray(task.assignedTo) ? task.assignedTo : []).length > 3 && (
+            )})}
+            {assignees.length > 3 && (
                 <div className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-[10px] font-black text-gray-600 shadow-sm">
-                    +{(task.assignedTo as any[]).length - 3}
+                    +{assignees.length - 3}
                 </div>
             )}
-            {(Array.isArray(task.assignedTo) ? task.assignedTo : []).length === 0 && (
+            {assignees.length === 0 && (
                 <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest italic ml-2 mt-2">Unassigned</span>
             )}
         </div>
