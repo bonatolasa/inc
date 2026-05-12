@@ -1,8 +1,12 @@
 import axios from 'axios';
 import { API_BASE_URL, API_DEPLOYED } from '../config/api.config';
 
+const LOCAL_API_TIMEOUT_MS = 2500;
+const DEPLOYED_API_TIMEOUT_MS = 15000;
+
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: API_BASE_URL === API_DEPLOYED ? DEPLOYED_API_TIMEOUT_MS : LOCAL_API_TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -12,6 +16,10 @@ api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  if (!config.timeout) {
+    const requestBaseUrl = config.baseURL ?? api.defaults.baseURL;
+    config.timeout = requestBaseUrl === API_DEPLOYED ? DEPLOYED_API_TIMEOUT_MS : LOCAL_API_TIMEOUT_MS;
   }
   return config;
 });
@@ -27,6 +35,7 @@ api.interceptors.response.use(
       (requestUrl.endsWith('/auth/login') || requestUrl === '/auth/login');
     const isNetworkFailure =
       error?.message === 'Network Error' ||
+      error?.code === 'ECONNABORTED' ||
       error?.code === 'ERR_NETWORK' ||
       (!error?.response && !!error?.request);
     const originalRequest = error.config as any;
