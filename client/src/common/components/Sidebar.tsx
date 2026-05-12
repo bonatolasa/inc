@@ -23,16 +23,11 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, setIsOpen }) => {
   const { user } = useAuth();
-  const { hasRole, hasPermission } = usePermission();
+  const { hasAccess } = usePermission();
   const navigate = useNavigate();
   
-  const hasAccess = (permissions?: PermissionValue[], roles?: string[]) => {
-    if (!permissions && !roles) return true;
-    if (permissions && permissions.length > 0) {
-      return hasPermission(permissions);
-    }
-    return roles ? hasRole(roles) : true;
-  };
+  const canAccess = (permissions?: PermissionValue[], roles?: string[]) =>
+    hasAccess(permissions, roles);
 
    const navItems = [
      { 
@@ -45,43 +40,43 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, setIsOpen }) => {
        name: 'Projects', 
        path: ROUTES.PROJECTS, 
        icon: FolderKanban,
-       visible: hasAccess([PERMISSIONS.PROJECTS_VIEW], ['admin', 'super_admin', 'project_manager'])
+       visible: canAccess([PERMISSIONS.PROJECTS_VIEW], ['admin', 'super_admin', 'project_manager'])
      },
      { 
        name: 'Tasks', 
        path: ROUTES.TASKS, 
        icon: CheckSquare,
-       visible: hasAccess([PERMISSIONS.TASKS_VIEW], ['admin', 'super_admin', 'project_manager', 'team_member', 'tester'])
+       visible: canAccess([PERMISSIONS.TASKS_VIEW], ['admin', 'super_admin', 'project_manager', 'team_member', 'tester'])
      },
      { 
        name: 'Reports', 
        path: ROUTES.REPORTS, 
        icon: BarChart3,
-       visible: hasAccess([PERMISSIONS.REPORTS_VIEW], ['admin', 'super_admin', 'project_manager'])
+       visible: canAccess([PERMISSIONS.REPORTS_VIEW], ['admin', 'super_admin', 'project_manager'])
      },
      { 
        name: 'Teams', 
        path: ROUTES.TEAMS, 
        icon: Users,
-       visible: hasAccess([PERMISSIONS.TEAMS_VIEW], ['admin', 'super_admin', 'project_manager'])
+       visible: canAccess([PERMISSIONS.TEAMS_VIEW], ['admin', 'super_admin', 'project_manager'])
      },
      { 
        name: 'Users', 
        path: ROUTES.USERS, 
        icon: UserCircle,
-       visible: hasAccess([PERMISSIONS.USERS_VIEW], ['admin', 'super_admin'])
+       visible: canAccess([PERMISSIONS.USERS_VIEW], ['admin', 'super_admin'])
      },
      { 
        name: 'Roles', 
        path: '/roles', 
        icon: Shield,
-       visible: hasAccess([PERMISSIONS.ROLES_VIEW], ['admin', 'super_admin'])
+       visible: canAccess([PERMISSIONS.ROLES_VIEW], ['admin', 'super_admin'])
      },
      { 
        name: 'Settings', 
        path: ROUTES.ADMIN_SETTINGS, 
        icon: Settings2,
-       visible: hasAccess(undefined, ['admin', 'super_admin'])
+       visible: canAccess(undefined, ['admin', 'super_admin'])
      },
    ].filter(item => item.visible);
 
