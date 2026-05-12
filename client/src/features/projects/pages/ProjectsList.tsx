@@ -36,7 +36,8 @@ const ProjectsList = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const projRes = isTester
+      const shouldUseContributorEndpoint = isTester || hasRole('team_member');
+      const projRes = shouldUseContributorEndpoint
         ? await projectService.getProjectsByContributor(currentUserId)
         : await projectService.getAllProjects();
       const canListAllTeams =

@@ -34,7 +34,7 @@ export class ProjectsController {
 
   @authorize({
     permissions: [Permissions.PROJECTS_VIEW],
-    roles: [Role.ADMIN, Role.PROJECT_MANAGER],
+    roles: [Role.ADMIN, Role.PROJECT_MANAGER, Role.TEAM_MEMBER, Role.TESTER],
   })
   @Get()
   async findAll(
