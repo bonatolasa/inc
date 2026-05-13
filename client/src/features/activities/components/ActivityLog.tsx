@@ -12,12 +12,12 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ activities }) => {
       {activities.map((activity) => (
         <div key={activity._id} className="flex border-b pb-4 last:border-0 dark:border-gray-700">
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold mr-4 shrink-0">
-             {typeof activity.user === 'object' ? activity.user.name.charAt(0) : 'U'}
+             {activity.user && typeof activity.user === 'object' ? activity.user.name.charAt(0) : 'U'}
           </div>
           <div>
             <p className="text-sm">
               <span className="font-semibold text-foreground">
-                {typeof activity.user === 'object' ? activity.user.name : activity.user}
+                {activity.user && typeof activity.user === 'object' ? activity.user.name : activity.user}
               </span>{' '}
               {activity.action}
             </p>
