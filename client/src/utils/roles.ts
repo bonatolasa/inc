@@ -19,7 +19,7 @@ const ROLE_DISPLAY_NAMES: Record<string, string> = {
 export type RoleName = typeof ROLES[keyof typeof ROLES];
 
 export const getRoleDisplayName = (role: string | Role): string => {
-  if (typeof role === 'object' && role.displayName) {
+  if (role && typeof role === 'object' && role.displayName) {
     return role.displayName;
   }
 
