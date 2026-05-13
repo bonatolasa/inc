@@ -169,7 +169,7 @@ const TasksList = () => {
   const handleOpenEdit = (task: Task) => {
     setEditMode(true);
     setCurrentTaskId(task._id);
-    const pId = typeof task.project === 'object' ? (task.project as any)._id : task.project;
+    const pId = task.project && typeof task.project === 'object' ? (task.project as any)._id : task.project;
     setFormData({
       title: task.title,
       description: task.description || '',
@@ -240,7 +240,7 @@ const TasksList = () => {
 
   const filteredTasks = tasks.filter((task) => {
     const q = searchTerm.trim().toLowerCase();
-    const projectName = typeof task.project === 'object' ? task.project.name : '';
+    const projectName = task.project && typeof task.project === 'object' ? task.project.name : '';
     const matchesSearch =
       !q ||
       task.title.toLowerCase().includes(q) ||
