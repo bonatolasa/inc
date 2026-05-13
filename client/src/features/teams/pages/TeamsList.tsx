@@ -163,7 +163,7 @@ const TeamsList = () => {
   const filteredTeams = teams.filter((team) => {
     const q = searchTerm.trim().toLowerCase();
     if (!q) return true;
-    const managerName = typeof team.manager === 'object' ? team.manager.name : '';
+    const managerName = team.manager && typeof team.manager === 'object' ? team.manager.name : '';
     return (
       team.name.toLowerCase().includes(q) ||
       (team.description || '').toLowerCase().includes(q) ||
