@@ -80,7 +80,7 @@ export const AppRoutes = () => {
           <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
 
           {/* Admin Settings - Role restricted (sensitive) */}
-          <Route element={<AccessRoute roles={['super_admin']} />}>
+          <Route element={<AccessRoute roles={['admin', 'super_admin']} />}>
             <Route path={ROUTES.ADMIN_SETTINGS} element={<SettingsPage />} />
           </Route>
 
