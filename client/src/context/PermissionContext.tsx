@@ -1,6 +1,7 @@
-import React, { createContext, ReactNode } from 'react';
+import React, { createContext, ReactNode, useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { PermissionValue } from '../config/permissions.config';
+import { roleService } from '../services/role.service';
 
 interface PermissionContextType {
   hasPermission: (permission: PermissionValue | PermissionValue[]) => boolean;
@@ -13,32 +14,76 @@ export const PermissionContext = createContext<PermissionContextType | undefined
 
 export const PermissionProvider = ({ children }: { children: ReactNode }) => {
   const { user, selectedRole } = useAuth();
+  const [selectedRolePermissions, setSelectedRolePermissions] = useState<string[] | null>(null);
 
-  const getSelectedRolePermissions = (): string[] => {
-    if (!user || !selectedRole || !Array.isArray(user.roles)) return [];
-    const roleObj = (user.roles as any[]).find((r: any) => {
-      const roleName = typeof r === 'string' ? r : r?.name;
-      return (roleName || '').toLowerCase() === selectedRole.toLowerCase();
-    });
-    if (roleObj && typeof roleObj !== 'string' && Array.isArray(roleObj.permissions)) {
-      return roleObj.permissions;
+  const resolveSelectedRolePermissions = async (roleName: string) => {
+    if (!user) {
+      setSelectedRolePermissions([]);
+      return;
     }
-    return [];
+
+    if (Array.isArray(user.roles)) {
+      const roleObj = (user.roles as any[]).find((r: any) => {
+        const name = typeof r === 'string' ? r : r?.name;
+        return (name || '').toLowerCase() === roleName.toLowerCase();
+      });
+
+      if (roleObj && typeof roleObj !== 'string' && Array.isArray(roleObj.permissions)) {
+        setSelectedRolePermissions(roleObj.permissions);
+        return;
+      }
+    }
+
+    try {
+      const response = await roleService.getRoleByName(roleName);
+      if (response.success && response.data?.permissions) {
+        setSelectedRolePermissions(response.data.permissions);
+      } else {
+        setSelectedRolePermissions([]);
+      }
+    } catch {
+      setSelectedRolePermissions([]);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedRole) {
+      setSelectedRolePermissions(null);
+      return;
+    }
+
+    setSelectedRolePermissions(null);
+    resolveSelectedRolePermissions(selectedRole);
+  }, [selectedRole, user]);
+
+  const getSelectedRolePermissions = (): string[] | null => {
+    if (!selectedRole) return null;
+    if (Array.isArray(user?.roles)) {
+      const roleObj = (user.roles as any[]).find((r: any) => {
+        const roleName = typeof r === 'string' ? r : r?.name;
+        return (roleName || '').toLowerCase() === selectedRole.toLowerCase();
+      });
+      if (roleObj && typeof roleObj !== 'string' && Array.isArray(roleObj.permissions)) {
+        return roleObj.permissions;
+      }
+    }
+    return selectedRolePermissions;
   };
 
   const getUserPermissions = (): string[] => {
     if (!user) return [];
 
     const permissions = new Set<string>();
+    const selectedPermissions = getSelectedRolePermissions();
 
-    // When a role is selected, scope permissions to that role only.
-    const selectedRolePermissions = getSelectedRolePermissions();
-    if (selectedRole && selectedRolePermissions.length > 0) {
-      selectedRolePermissions.forEach((p: string) => permissions.add(p));
-      return Array.from(permissions);
+    if (selectedRole) {
+      if (selectedPermissions !== null) {
+        selectedPermissions.forEach((p: string) => permissions.add(p));
+        return Array.from(permissions);
+      }
+      return [];
     }
 
-    // Fallback: use merged direct permissions if role-scoped permissions are unavailable.
     if (Array.isArray(user.permissions)) {
       user.permissions.forEach((p: string) => permissions.add(p));
     }
