@@ -8,17 +8,20 @@ interface PermissionContextType {
   hasRole: (roleName: string | string[]) => boolean;
   hasAccess: (permissions?: PermissionValue | PermissionValue[], roles?: string | string[]) => boolean;
   getUserPermissions: () => string[];
+  isPermissionLoading: boolean;
 }
 
 export const PermissionContext = createContext<PermissionContextType | undefined>(undefined);
 
 export const PermissionProvider = ({ children }: { children: ReactNode }) => {
-  const { user, selectedRole } = useAuth();
+  const { user, selectedRole, isLoading: isAuthLoading } = useAuth();
   const [selectedRolePermissions, setSelectedRolePermissions] = useState<string[] | null>(null);
+  const [isPermissionLoading, setIsPermissionLoading] = useState(true);
 
   const resolveSelectedRolePermissions = async (roleName: string) => {
     if (!user) {
       setSelectedRolePermissions([]);
+      setIsPermissionLoading(false);
       return;
     }
 
@@ -43,18 +46,40 @@ export const PermissionProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch {
       setSelectedRolePermissions([]);
+    } finally {
+      setIsPermissionLoading(false);
     }
   };
 
   useEffect(() => {
+    if (isAuthLoading) {
+      setIsPermissionLoading(true);
+      return;
+    }
+
     if (!selectedRole) {
       setSelectedRolePermissions(null);
+      setIsPermissionLoading(false);
+      return;
+    }
+
+    const localRole = Array.isArray(user?.roles)
+      ? (user.roles as any[]).find((r: any) => {
+          const name = typeof r === 'string' ? r : r?.name;
+          return (name || '').toLowerCase() === selectedRole.toLowerCase();
+        })
+      : undefined;
+
+    if (localRole && typeof localRole !== 'string' && Array.isArray(localRole.permissions)) {
+      setSelectedRolePermissions(localRole.permissions);
+      setIsPermissionLoading(false);
       return;
     }
 
     setSelectedRolePermissions(null);
+    setIsPermissionLoading(true);
     resolveSelectedRolePermissions(selectedRole);
-  }, [selectedRole, user]);
+  }, [selectedRole, user, isAuthLoading]);
 
   const getSelectedRolePermissions = (): string[] | null => {
     if (!selectedRole) return null;
@@ -114,15 +139,28 @@ export const PermissionProvider = ({ children }: { children: ReactNode }) => {
   const hasPermission = (permission: PermissionValue | PermissionValue[]): boolean => {
     if (!user) return false;
 
-    const userPermissions = getUserPermissions();
+    const normalizedPermissions = new Set(
+      getUserPermissions().map((perm) => perm.toLowerCase()),
+    );
 
-    if (userPermissions.includes('ALL') || userPermissions.includes('*')) return true;
+    const hasExact = (requested: string) => {
+      const normalizedRequested = requested.toLowerCase();
+      if (normalizedPermissions.has('all') || normalizedPermissions.has('*')) return true;
+      if (normalizedPermissions.has(normalizedRequested)) return true;
 
-    // Check single permission or array
+      if (normalizedRequested.endsWith('.view')) {
+        const viewAllPermission = `${normalizedRequested}.all`;
+        if (normalizedPermissions.has(viewAllPermission)) return true;
+      }
+
+      return false;
+    };
+
     if (Array.isArray(permission)) {
-      return permission.some(p => userPermissions.includes(p));
+      return permission.some((p) => hasExact(p));
     }
-    return userPermissions.includes(permission);
+
+    return hasExact(permission);
   };
 
   const hasAccess = (permissions?: PermissionValue | PermissionValue[], roles?: string | string[]) => {
@@ -133,7 +171,7 @@ export const PermissionProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <PermissionContext.Provider value={{ hasPermission, hasRole, hasAccess, getUserPermissions }}>
+    <PermissionContext.Provider value={{ hasPermission, hasRole, hasAccess, getUserPermissions, isPermissionLoading }}>
       {children}
     </PermissionContext.Provider>
   );
