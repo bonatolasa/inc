@@ -9,6 +9,7 @@ import DashboardLayout from '../layouts/DashboardLayout';
 import Dashboard from '../pages/dashboard/Dashboard';
 import SettingsPage from '../pages/admin/SettingsPage';
 import NotFound from '../pages/errors/NotFound';
+import Unauthorized from '../pages/errors/Unauthorized';
 
 import Login from '../auth/Login';
 import Signup from '../auth/Signup';
@@ -92,7 +93,7 @@ export const AppRoutes = () => {
       </Route>
 
       {/* Fallbacks */}
-      <Route path={ROUTES.UNAUTHORIZED} element={<div className="p-8 text-red-500 font-bold">403 Unauthorized: Invalid Permissions</div>} />
+      <Route path={ROUTES.UNAUTHORIZED} element={<Unauthorized />} />
       <Route path="*" element={<Navigate to={ROUTES.NOT_FOUND} replace />} />
       <Route path={ROUTES.NOT_FOUND} element={<NotFound />} />
     </Routes>
