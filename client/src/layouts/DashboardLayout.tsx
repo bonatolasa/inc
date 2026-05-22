@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { Sidebar, Navbar, ErrorBoundary } from '../common/components';
 import { useAuth } from '../hooks/useAuth';
 import { RoleSelectionModal } from '../features/auth/components/RoleSelectionModal';
+import { getDefaultRouteForRole } from '../config/roleRoutes.config';
 import { ROUTES } from '../config/routes.config';
 
 interface DashboardLayoutProps {
@@ -28,12 +29,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const handleRoleSelect = (role: string) => {
     setSelectedRole(role);
     setShowRoleModal(false);
-    // Redirect based on selected role
-    if (role === 'super_admin') {
-      navigate(ROUTES.SUPER_ADMIN_DASHBOARD);
-    } else {
-      navigate(ROUTES.DASHBOARD);
-    }
+    // Redirect to role-specific default route
+    navigate(getDefaultRouteForRole(role));
   };
 
   const handleCloseModal = () => {
