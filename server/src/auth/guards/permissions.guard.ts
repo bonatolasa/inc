@@ -97,9 +97,30 @@ export class PermissionsGuard implements CanActivate {
        userPermissions = [...new Set([...userPermissions, ...rolePermissions])];
      }
 
+    const normalizedUserPermissions = new Set(
+      userPermissions.map((perm) => perm.toLowerCase()),
+    );
+
+    const hasPermissionMatch = (requiredPermission: string): boolean => {
+      const normalizedRequired = requiredPermission.toLowerCase();
+      if (normalizedUserPermissions.has('all') || normalizedUserPermissions.has('*')) {
+        return true;
+      }
+      if (normalizedUserPermissions.has(normalizedRequired)) {
+        return true;
+      }
+      if (normalizedRequired.endsWith('.view')) {
+        const viewAllPermission = `${normalizedRequired}.all`;
+        if (normalizedUserPermissions.has(viewAllPermission)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
     const hasRequiredPermission =
       !requiredPermissions?.length ||
-      requiredPermissions.some((permission) => userPermissions.includes(permission));
+      requiredPermissions.some((permission) => hasPermissionMatch(permission));
 
     // OR mode: allow if either role or permission matches
     const requireAll = accessControl.requireAll !== undefined ? accessControl.requireAll : true;
