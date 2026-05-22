@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Search, LogOut, Shield, ChevronDown } from 'lucide-react';
 import { getRoleDisplayName } from '../../utils/roles';
 import { ROUTES } from '../../config/routes.config';
+import { getDefaultRouteForRole } from '../../config/roleRoutes.config';
 import NotificationDropdown from './NotificationDropdown';
 
 const Navbar = () => {
@@ -24,12 +25,8 @@ const Navbar = () => {
   const handleRoleChange = (role: string) => {
     setSelectedRole(role);
     setShowRoleDropdown(false);
-    // Redirect to role-appropriate page
-    if (role === 'super_admin') {
-      navigate(ROUTES.SUPER_ADMIN_DASHBOARD);
-    } else {
-      navigate(ROUTES.DASHBOARD);
-    }
+    // Redirect to role-specific default route
+    navigate(getDefaultRouteForRole(role));
   };
 
   return (
