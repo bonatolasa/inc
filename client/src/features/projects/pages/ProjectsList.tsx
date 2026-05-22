@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { projectService } from '../../../services/project.service';
 import { teamService } from '../../../services/team.service';
 import { Project } from '../../../types/project.types';
@@ -12,10 +12,25 @@ import { FolderKanban, Users, Info, PlusCircle } from 'lucide-react';
 
 const ProjectsList = () => {
   const ITEMS_PER_PAGE = 6;
-  const { user } = useAuth();
+  const { user, selectedRole } = useAuth();
   const { hasRole, hasPermission } = usePermission();
   const currentUserId = (user?._id || (user as any)?.id || '').toString();
-  const isTester = hasRole('tester');
+
+  const currentUserRole = useMemo(() => {
+    if (selectedRole) return selectedRole;
+    if (!user?.roles || !Array.isArray(user.roles)) return '';
+    if (user.roles.length === 1) {
+      const role = user.roles[0];
+      return typeof role === 'string' ? role : role.name;
+    }
+    return '';
+  }, [selectedRole, user?.roles]);
+
+  const isTester = currentUserRole === 'tester';
+  const isTeamMember = currentUserRole === 'team_member';
+  const isProjectManager = currentUserRole === 'project_manager';
+  const canViewAllProjects = hasPermission(PERMISSIONS.PROJECTS_VIEW_ALL);
+  const isAdminLike = currentUserRole === 'admin' || currentUserRole === 'super_admin';
   const [projects, setProjects] = useState<Project[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | Project['status']>('all');
@@ -36,13 +51,21 @@ const ProjectsList = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const shouldUseContributorEndpoint = isTester || hasRole('team_member');
-      const projRes = shouldUseContributorEndpoint
-        ? await projectService.getProjectsByContributor(currentUserId)
-        : await projectService.getAllProjects();
+      let projRes;
+      if (canViewAllProjects) {
+        projRes = await projectService.getAllProjects();
+      } else if (isTester || isTeamMember) {
+        projRes = await projectService.getProjectsByContributor(currentUserId);
+      } else if (isProjectManager) {
+        projRes = await projectService.getProjectsByManager(currentUserId);
+      } else {
+        projRes = await projectService.getProjectsByContributor(currentUserId);
+      }
+
       const canListAllTeams =
-        hasPermission(PERMISSIONS.TEAMS_VIEW) &&
-        hasRole(['admin', 'super_admin', 'project_manager']);
+        hasPermission(PERMISSIONS.TEAMS_VIEW_ALL) ||
+        isAdminLike ||
+        isProjectManager;
       const teamsRes = canListAllTeams
         ? await teamService.getAllTeams()
         : await teamService.getMyTeams();
@@ -54,7 +77,7 @@ const ProjectsList = () => {
     } finally {
       setLoading(false);
     }
-  }, [hasPermission, hasRole, isTester, currentUserId]);
+  }, [hasPermission, isTester, isTeamMember, isProjectManager, isAdminLike, currentUserId]);
 
   useEffect(() => {
     fetchData();
