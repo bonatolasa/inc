@@ -90,6 +90,11 @@ const Login = () => {
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 transform translate-x-1/2 translate-y-1/2"></div>
 
       <div className="w-full max-w-md p-10 bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl shadow-blue-900/5 border border-white relative z-10">
+        <img
+          src="/debo-logo.png"
+          alt="Debo Engineering"
+          className="mx-auto mb-6 h-14 w-auto"
+        />
         <h2 className="text-3xl font-black text-center mb-8 text-gray-900 tracking-tight">Welcome Back</h2>
         {error && <div className="p-4 mb-6 text-sm font-semibold text-red-600 bg-red-50 border border-red-100 rounded-xl shadow-sm">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-5">
