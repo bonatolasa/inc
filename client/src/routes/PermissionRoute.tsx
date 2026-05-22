@@ -8,7 +8,11 @@ interface PermissionRouteProps {
 }
 
 export const PermissionRoute = ({ permission }: PermissionRouteProps) => {
-  const { hasPermission } = usePermission();
+  const { hasPermission, isPermissionLoading } = usePermission();
+
+  if (isPermissionLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
 
   if (!hasPermission(permission)) {
     return <Navigate to={ROUTES.UNAUTHORIZED} replace />;
