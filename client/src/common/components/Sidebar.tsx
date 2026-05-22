@@ -90,10 +90,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, setIsOpen }) => {
     >
       <div className={`p-6 flex items-center ${isOpen ? 'justify-start' : 'justify-center'} transition-all duration-300`}>
         <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm shadow-primary/20">
-            <div className="w-4 h-4 bg-white rounded-full"></div>
-          </div>
-          {isOpen && <h1 className="text-2xl font-black text-gray-900 tracking-tight whitespace-nowrap overflow-hidden">PR Manage</h1>}
+          <img
+            src="/debo-logo.png"
+            alt="Debo Engineering"
+            className="w-14 h-14 rounded-full object-cover"
+          />
+          {isOpen && (
+            <div className="leading-tight">
+              <h1 className="text-2xl font-black text-gray-900 tracking-tight whitespace-nowrap overflow-hidden">Debo</h1>
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Engineering</p>
+            </div>
+          )}
         </div>
       </div>
       
