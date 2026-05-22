@@ -4,6 +4,7 @@ import { getRoleDisplayName } from '../../../utils/roles';
 import { Modal, Can } from '../../../common/components';
 import { roleService } from '../../../services/role.service';
 import { PERMISSION_GROUPS, dedupePermissions } from '../../../config/permission-groups.config';
+import { PERMISSIONS } from '../../../config/permissions.config';
 import { CheckCircle, ShieldCheck, Trash2, Edit3, Save } from 'lucide-react';
 
 interface RoleTableProps {
@@ -14,11 +15,9 @@ interface RoleTableProps {
 const RoleTable: React.FC<RoleTableProps> = ({ roles, onRefresh }) => {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [rolePermissions, setRolePermissions] = useState<string[]>([]);
-  
-  // For Renaming
-  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
   const [newName, setNewName] = useState('');
 
   const handleOpenEdit = (role: Role) => {
@@ -67,9 +66,9 @@ const RoleTable: React.FC<RoleTableProps> = ({ roles, onRefresh }) => {
         onRefresh();
       }
     } catch (error) {
-       console.error("Display name update failed", error);
+      console.error('Display name update failed', error);
     } finally {
-       setIsUpdating(false);
+      setIsUpdating(false);
     }
   };
 
@@ -97,10 +96,6 @@ const RoleTable: React.FC<RoleTableProps> = ({ roles, onRefresh }) => {
     }
   };
 
-  const handleSavePermissions = async () => {
-    // No longer needed, saving is immediate
-  };
-
   return (
     <div className="overflow-x-auto bg-white rounded-2xl">
       <table className="w-full text-left border-collapse min-w-max">
@@ -123,21 +118,25 @@ const RoleTable: React.FC<RoleTableProps> = ({ roles, onRefresh }) => {
                 </span>
               </td>
               <td className="p-5 text-right space-x-2">
-                <button 
-                  onClick={() => handleOpenRename(role)}
-                  className="text-gray-400 hover:text-primary transition-colors p-2 bg-white border border-gray-100 shadow-sm rounded-lg"
-                  title="Rename Role"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => handleOpenEdit(role)}
-                  className="text-gray-400 hover:text-green-600 transition-colors p-2 bg-white border border-gray-100 shadow-sm rounded-lg"
-                  title="Edit Permissions"
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                </button>
-                <Can roles={['super_admin']}>
+                <Can permissions={[PERMISSIONS.ROLES_UPDATE]}>
+                  <button 
+                    onClick={() => handleOpenRename(role)}
+                    className="text-gray-400 hover:text-primary transition-colors p-2 bg-white border border-gray-100 shadow-sm rounded-lg"
+                    title="Rename Role"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                </Can>
+                <Can permissions={[PERMISSIONS.ROLES_ASSIGN_PERMISSIONS]}>
+                  <button 
+                    onClick={() => handleOpenEdit(role)}
+                    className="text-gray-400 hover:text-green-600 transition-colors p-2 bg-white border border-gray-100 shadow-sm rounded-lg"
+                    title="Edit Permissions"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                  </button>
+                </Can>
+                <Can permissions={[PERMISSIONS.ROLES_DELETE]}>
                   <button 
                     onClick={() => handleDeleteRole(role)}
                     className="text-gray-400 hover:text-red-500 transition-colors p-2 bg-white border border-gray-100 shadow-sm rounded-lg"
@@ -152,7 +151,6 @@ const RoleTable: React.FC<RoleTableProps> = ({ roles, onRefresh }) => {
         </tbody>
       </table>
 
-      {/* Permissions Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -192,7 +190,6 @@ const RoleTable: React.FC<RoleTableProps> = ({ roles, onRefresh }) => {
         </div>
       </Modal>
 
-      {/* Rename Modal */}
       <Modal
         isOpen={isRenameModalOpen}
         onClose={() => setIsRenameModalOpen(false)}
