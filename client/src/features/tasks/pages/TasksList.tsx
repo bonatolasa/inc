@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { taskService } from '../../../services/task.service';
 import { projectService } from '../../../services/project.service';
 import { Task } from '../../../types/task.types';
@@ -13,12 +13,20 @@ import { useAuth } from '../../../hooks/useAuth';
 
 const TasksList = () => {
   const ITEMS_PER_PAGE = 6;
-  const { user } = useAuth();
-  const { hasRole } = usePermission();
-  const isTeamMember = hasRole('team_member');
-  const isTester = hasRole('tester');
-  const isProjectManager = hasRole('project_manager');
-  const isAdminLike = hasRole(['admin', 'super_admin']);
+  const { user, selectedRole } = useAuth();
+  const { hasPermission } = usePermission();
+  const activeRole = useMemo(() => {
+    if (selectedRole) return selectedRole.toLowerCase();
+    if (!user?.roles || !Array.isArray(user.roles) || user.roles.length === 0) return '';
+    const firstRole = user.roles[0];
+    return (typeof firstRole === 'string' ? firstRole : (firstRole as any)?.name || '').toLowerCase();
+  }, [selectedRole, user?.roles]);
+  const isTeamMember = activeRole === 'team_member';
+  const isTester = activeRole === 'tester';
+  const isProjectManager = activeRole === 'project_manager';
+  const isAdminLike = activeRole === 'admin' || activeRole === 'super_admin';
+  const canViewAllTasks = hasPermission(PERMISSIONS.TASKS_VIEW_ALL);
+  const canViewAllProjects = hasPermission(PERMISSIONS.PROJECTS_VIEW_ALL);
   const currentUserId = (user?._id || (user as any)?.id || '').toString();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -82,6 +90,16 @@ const TasksList = () => {
 
         if (tasksRes.success) setTasks(tasksRes.data);
         if (projectsRes.success) setProjects(projectsRes.data);
+      } else if (canViewAllTasks) {
+        const [tasksRes, projectsRes] = await Promise.all([
+          taskService.getAllTasks(),
+          canViewAllProjects
+            ? projectService.getAllProjects()
+            : Promise.resolve({ success: true, data: [] as Project[] }),
+        ]);
+
+        if (tasksRes.success) setTasks(tasksRes.data);
+        if (projectsRes.success) setProjects(projectsRes.data);
       } else if (isProjectManager) {
         const [myTasksRes, projectsRes] = await Promise.all([
           taskService.getMyTasks(),
@@ -108,14 +126,6 @@ const TasksList = () => {
           new Map([...myTasks, ...projectTasks].map((t) => [t._id, t])).values(),
         );
         setTasks(uniqueTasks);
-      } else if (isAdminLike) {
-        const [tasksRes, projectsRes] = await Promise.all([
-          taskService.getAllTasks(),
-          projectService.getAllProjects()
-        ]);
-
-        if (tasksRes.success) setTasks(tasksRes.data);
-        if (projectsRes.success) setProjects(projectsRes.data);
       } else {
         const tasksRes = await taskService.getMyTasks();
         if (tasksRes.success) setTasks(tasksRes.data);
@@ -126,7 +136,7 @@ const TasksList = () => {
     } finally {
       setLoading(false);
     }
-  }, [isTester, isTeamMember, isProjectManager, isAdminLike, currentUserId]);
+  }, [isTester, isTeamMember, isProjectManager, isAdminLike, canViewAllTasks, canViewAllProjects, currentUserId]);
 
   useEffect(() => {
     fetchData();
