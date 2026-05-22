@@ -9,10 +9,14 @@ interface AccessRouteProps {
 }
 
 export const AccessRoute = ({ permissions, roles }: AccessRouteProps) => {
-  const { hasAccess } = usePermission();
+  const { hasAccess, isPermissionLoading } = usePermission();
 
   if (!permissions && !roles) {
     return <Outlet />;
+  }
+
+  if (isPermissionLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
   return hasAccess(permissions, roles) ? <Outlet /> : <Navigate to={ROUTES.UNAUTHORIZED} replace />;
