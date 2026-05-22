@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { teamService } from '../../../services/team.service';
 import { userService } from '../../../services/user.service';
 import { Team } from '../../../types/team.types';
@@ -33,13 +33,16 @@ const TeamsList = () => {
     members: [] as string[],
     testers: [] as string[],
   });
-  const firstUserRole = Array.isArray(user?.roles)
-    ? (typeof user.roles[0] === 'string' ? user.roles[0] : (user.roles[0] as any)?.name)
-    : '';
-  const activeRole = (selectedRole || firstUserRole || '').toLowerCase();
+  const activeRole = useMemo(() => {
+    if (selectedRole) return selectedRole.toLowerCase();
+    if (!user?.roles || !Array.isArray(user.roles) || user.roles.length === 0) return '';
+    const firstRole = user.roles[0];
+    return (typeof firstRole === 'string' ? firstRole : (firstRole as any)?.name || '').toLowerCase();
+  }, [selectedRole, user?.roles]);
   const isAdminLike = activeRole === 'admin' || activeRole === 'super_admin';
   const isProjectManager = activeRole === 'project_manager';
   const canViewUsers = hasPermission(PERMISSIONS.USERS_VIEW);
+  const canViewAllTeams = hasPermission(PERMISSIONS.TEAMS_VIEW_ALL);
   const canSelectManager = isAdminLike && canViewUsers;
   const currentUserId = (user?._id || (user as any)?.id || '').toString();
 
@@ -47,11 +50,15 @@ const TeamsList = () => {
     setLoading(true);
     try {
       let response;
-      try {
+
+      if (canViewAllTeams) {
         response = await teamService.getAllTeams();
-      } catch {
+      } else if (isProjectManager && currentUserId) {
+        response = await teamService.getTeamsByManager(currentUserId);
+      } else {
         response = await teamService.getMyTeams();
       }
+
       if (response.success) {
         setTeams(response.data);
       }
