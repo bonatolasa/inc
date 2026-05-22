@@ -15,6 +15,7 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) { }
 
   @authorize({
+    requireAll: false,
     roles: [Role.TEAM_MEMBER, Role.PROJECT_MANAGER, Role.ADMIN, Role.TESTER],
     permissions: [Permissions.TASKS_VIEW],
   })
@@ -29,6 +30,7 @@ export class TasksController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.TASKS_VIEW],
     roles: [Role.TEAM_MEMBER, Role.PROJECT_MANAGER, Role.ADMIN],
   })
@@ -43,6 +45,7 @@ export class TasksController {
   }
 
   @authorize({
+    requireAll: false,
     roles: [Role.PROJECT_MANAGER, Role.ADMIN, Role.SUPER_ADMIN],
     permissions: [Permissions.TASKS_CREATE, Permissions.TASKS_ASSIGN],
     // context: { check: 'project_member', projectIdBodyField: 'project' },
@@ -65,6 +68,7 @@ export class TasksController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.TASKS_VIEW],
     roles: [Role.TEAM_MEMBER, Role.PROJECT_MANAGER, Role.ADMIN, Role.TESTER],
   })
@@ -97,6 +101,7 @@ export class TasksController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.TASKS_VIEW],
     roles: [Role.PROJECT_MANAGER, Role.ADMIN],
   })
@@ -111,6 +116,7 @@ export class TasksController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.TASKS_VIEW],
     roles: [Role.TEAM_MEMBER, Role.PROJECT_MANAGER, Role.ADMIN, Role.TESTER],
   })
@@ -125,6 +131,7 @@ export class TasksController {
   }
 
   @authorize({
+    requireAll: false,
     roles: [Role.PROJECT_MANAGER, Role.ADMIN, Role.SUPER_ADMIN, Role.TEAM_MEMBER, Role.TESTER],
     permissions: [
       Permissions.TASKS_UPDATE,
@@ -150,6 +157,7 @@ export class TasksController {
   }
 
   @authorize({
+    requireAll: false,
     roles: [Role.PROJECT_MANAGER, Role.ADMIN, Role.SUPER_ADMIN, Role.TEAM_MEMBER, Role.TESTER],
     permissions: [
       Permissions.TASKS_UPDATE,
@@ -175,6 +183,7 @@ export class TasksController {
   }
 
   @authorize({
+    requireAll: false,
     roles: [Role.PROJECT_MANAGER, Role.ADMIN, Role.SUPER_ADMIN],
     permissions: [Permissions.TASKS_DELETE],
     context: { check: 'task_access', taskIdParam: 'id' },
@@ -185,6 +194,7 @@ export class TasksController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.TASKS_VIEW],
     roles: [Role.PROJECT_MANAGER, Role.ADMIN, Role.TEAM_MEMBER, Role.TESTER],
   })
@@ -199,6 +209,7 @@ export class TasksController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.TASKS_VIEW],
     roles: [Role.PROJECT_MANAGER, Role.ADMIN],
   })
@@ -213,6 +224,7 @@ export class TasksController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.TASKS_VIEW],
     roles: [Role.PROJECT_MANAGER, Role.ADMIN],
   })
@@ -227,6 +239,7 @@ export class TasksController {
   }
 
   @authorize({
+    requireAll: false,
     roles: [Role.PROJECT_MANAGER, Role.ADMIN, Role.TEAM_MEMBER, Role.TESTER],
     permissions: [
       Permissions.TASKS_UPDATE,
@@ -251,6 +264,7 @@ export class TasksController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.TASKS_UPDATE],
     roles: [Role.PROJECT_MANAGER, Role.ADMIN],
   })
@@ -268,6 +282,7 @@ export class TasksController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.TASKS_UPDATE],
     roles: [Role.PROJECT_MANAGER, Role.ADMIN],
   })
@@ -285,6 +300,7 @@ export class TasksController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.REPORTS_VIEW],
     roles: [Role.PROJECT_MANAGER, Role.ADMIN],
   })

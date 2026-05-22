@@ -15,6 +15,7 @@ export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
   @authorize({
+    requireAll: false,
     roles: [Role.PROJECT_MANAGER],
     permissions: [Permissions.PROJECTS_CREATE],
     // context: { check: 'team_member', teamIdParam: 'team', projectIdBodyField: 'team' },
@@ -33,6 +34,7 @@ export class ProjectsController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.PROJECTS_VIEW],
     roles: [Role.ADMIN, Role.PROJECT_MANAGER, Role.TEAM_MEMBER, Role.TESTER],
   })
@@ -58,6 +60,7 @@ export class ProjectsController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.PROJECTS_UPDATE],
     roles: [Role.PROJECT_MANAGER],
     // context: { check: 'project_member', projectIdParam: 'id' },
@@ -76,6 +79,7 @@ export class ProjectsController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.PROJECTS_DELETE],
     roles: [Role.ADMIN, Role.PROJECT_MANAGER],
     // context: { check: 'project_member', projectIdParam: 'id' },
@@ -88,6 +92,7 @@ export class ProjectsController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.PROJECTS_VIEW],
     roles: [Role.TEAM_MEMBER, Role.TESTER, Role.PROJECT_MANAGER],
     // context: { check: 'team_member', teamIdParam: 'teamId' },
@@ -105,6 +110,7 @@ export class ProjectsController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.PROJECTS_VIEW],
     roles: [Role.ADMIN, Role.PROJECT_MANAGER],
   })
@@ -121,6 +127,7 @@ export class ProjectsController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.PROJECTS_VIEW],
     roles: [Role.ADMIN, Role.PROJECT_MANAGER, Role.TEAM_MEMBER, Role.TESTER],
   })
@@ -137,6 +144,7 @@ export class ProjectsController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.PROJECTS_UPDATE],
     roles: [Role.PROJECT_MANAGER, Role.TEAM_MEMBER],
     // context: { check: 'project_member', projectIdParam: 'id' },
@@ -155,6 +163,7 @@ export class ProjectsController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.PROJECTS_VIEW],
     roles: [Role.ADMIN, Role.PROJECT_MANAGER],
   })
@@ -169,6 +178,7 @@ export class ProjectsController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.PROJECTS_VIEW],
     roles: [Role.PROJECT_MANAGER, Role.TEAM_MEMBER, Role.TESTER],
     // context: { check: 'project_member', projectIdParam: 'id' },

@@ -15,6 +15,7 @@ export class TeamsController {
   constructor(private readonly teamsService: TeamsService) { }
 
   @authorize({
+    requireAll: false,
     roles: [Role.ADMIN, Role.PROJECT_MANAGER],
     permissions: [Permissions.TEAMS_CREATE],
   })
@@ -28,6 +29,7 @@ export class TeamsController {
   }
 
   @authorize({
+    requireAll: false,
     roles: [Role.ADMIN, Role.PROJECT_MANAGER],
     permissions: [Permissions.TEAMS_VIEW],
   })
@@ -49,6 +51,7 @@ export class TeamsController {
   }
 
   @authorize({
+    requireAll: false,
     roles: [Role.ADMIN, Role.PROJECT_MANAGER],
     permissions: [Permissions.TEAMS_UPDATE],
   })
@@ -62,6 +65,7 @@ export class TeamsController {
   }
 
   @authorize({
+    requireAll: false,
     roles: [Role.ADMIN, Role.PROJECT_MANAGER],
     permissions: [Permissions.TEAMS_DELETE],
   })
@@ -73,6 +77,7 @@ export class TeamsController {
   }
 
   @authorize({
+    requireAll: false,
     roles: [Role.ADMIN, Role.PROJECT_MANAGER],
     permissions: [Permissions.TEAMS_MANAGE],
   })
@@ -86,6 +91,7 @@ export class TeamsController {
   }
 
   @authorize({
+    requireAll: false,
     roles: [Role.ADMIN, Role.PROJECT_MANAGER],
     permissions: [Permissions.TEAMS_MANAGE],
   })
@@ -99,6 +105,7 @@ export class TeamsController {
   }
 
   @authorize({
+    requireAll: false,
     roles: [Role.ADMIN, Role.PROJECT_MANAGER],
     permissions: [Permissions.TEAMS_VIEW],
   })
@@ -109,6 +116,7 @@ export class TeamsController {
   }
 
   @authorize({
+    requireAll: false,
     roles: [Role.TEAM_MEMBER, Role.TESTER, Role.PROJECT_MANAGER],
     permissions: [Permissions.TEAMS_VIEW],
   })
@@ -119,6 +127,7 @@ export class TeamsController {
   }
 
   @authorize({
+    requireAll: false,
     roles: [Role.TEAM_MEMBER, Role.TESTER, Role.PROJECT_MANAGER],
     permissions: [Permissions.TEAMS_VIEW],
   })
@@ -129,6 +138,7 @@ export class TeamsController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.TEAMS_VIEW],
     roles: [Role.TEAM_MEMBER, Role.TESTER, Role.PROJECT_MANAGER, Role.ADMIN],
   })
@@ -139,6 +149,7 @@ export class TeamsController {
   }
 
   @authorize({
+    requireAll: false,
     permissions: [Permissions.TEAMS_VIEW],
     roles: [Role.TEAM_MEMBER, Role.TESTER, Role.PROJECT_MANAGER, Role.ADMIN],
   })
