@@ -109,6 +109,7 @@ export class RolesService implements OnModuleInit {
     // Generate display name if not provided
     const finalDisplayName = displayName || name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     
+    // Custom roles should at least have ROLES_VIEW permission to allow role switching
     return this.roleModel.create({
       name: normalized,
       displayName: finalDisplayName,

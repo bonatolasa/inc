@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/commo
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { RolesService } from './roles.service';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { authorize } from '../decorators/authorize.decorator';
 import { Permissions } from '../constants/permissions.constants';
 import { User } from '../../users/schemas/users.schemas';
@@ -32,7 +33,7 @@ export class RolesController {
     };
   }
 
-  @authorize({ permissions: [Permissions.ROLES_VIEW] })
+  @JwtAuthGuard()
   @Get(':name')
   async getRole(@Param('name') name: string) {
     return {
