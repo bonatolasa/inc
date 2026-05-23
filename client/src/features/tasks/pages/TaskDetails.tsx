@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { taskService } from '../../../services/task.service';
+import { attachmentService } from '../../../services/attachment.service';
 import { Task } from '../../../types/task.types';
+import { Attachment } from '../../../types/attachment.types';
 import { Loader } from '../../../common/components';
 import { usePermission } from '../../../hooks/usePermission';
 import { PERMISSIONS } from '../../../config/permissions.config';
-import { CheckSquare, Clock, AlertCircle, ArrowLeft, MoreHorizontal, User, Paperclip, Users, FolderKanban } from 'lucide-react';
+import { Clock, AlertCircle, ArrowLeft, MoreHorizontal, Paperclip, Users, FolderKanban, DownloadCloud, Trash2 } from 'lucide-react';
 import { getStatusColor, formatDate } from '../../../utils/formatters';
 
 const TaskDetails = () => {
@@ -13,8 +15,13 @@ const TaskDetails = () => {
   const navigate = useNavigate();
   const { hasPermission, hasRole } = usePermission();
   const [task, setTask] = useState<Task | null>(null);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [deletingAttachmentId, setDeletingAttachmentId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
   const canTestTask =
     hasRole('tester') ||
     hasPermission(PERMISSIONS.TASKS_TEST_UPDATE) ||
@@ -27,6 +34,9 @@ const TaskDetails = () => {
     hasRole('tester') ||
     hasPermission(PERMISSIONS.TASKS_TEST_UPDATE) ||
     hasPermission(PERMISSIONS.VERIFY_TASK);
+  const canUploadAttachment = hasPermission(PERMISSIONS.ATTACHMENTS_UPLOAD);
+  const canViewAttachments = hasPermission(PERMISSIONS.ATTACHMENTS_VIEW);
+  const canDeleteAttachment = hasPermission(PERMISSIONS.ATTACHMENTS_DELETE);
 
   useEffect(() => {
     const fetchTask = async () => {
@@ -37,12 +47,32 @@ const TaskDetails = () => {
           setTask(response.data);
         }
       } catch (error) {
-        console.error("Failed to fetch task details", error);
+        console.error('Failed to fetch task details', error);
       } finally {
         setLoading(false);
       }
     };
     fetchTask();
+  }, [id]);
+
+  const fetchAttachments = async () => {
+    if (!id) return;
+    setAttachmentsLoading(true);
+    try {
+      const response = await attachmentService.getAttachmentsByTask(id);
+      if (response.success) {
+        setAttachments(response.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch attachments', error);
+    } finally {
+      setAttachmentsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!id) return;
+    fetchAttachments();
   }, [id]);
 
   const refreshTask = async () => {
@@ -84,6 +114,50 @@ const TaskDetails = () => {
     }
   };
 
+  const handleUploadClick = () => {
+    attachmentInputRef.current?.click();
+  };
+
+  const handleFileSelection = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !id) return;
+
+    setUploading(true);
+    try {
+      const response = await attachmentService.uploadAttachment(id, file);
+      if (response.success) {
+        await fetchAttachments();
+        alert('Attachment uploaded successfully.');
+      }
+    } catch (error) {
+      console.error('Attachment upload failed', error);
+      alert('Attachment upload failed.');
+    } finally {
+      setUploading(false);
+      if (event.target) {
+        event.target.value = '';
+      }
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId: string) => {
+    if (!window.confirm('Are you sure you want to delete this attachment?')) return;
+
+    setDeletingAttachmentId(attachmentId);
+    try {
+      const response = await attachmentService.deleteAttachment(attachmentId);
+      if (response.success) {
+        await fetchAttachments();
+        alert('Attachment deleted successfully.');
+      }
+    } catch (error) {
+      console.error('Failed to delete attachment', error);
+      alert('Failed to delete attachment.');
+    } finally {
+      setDeletingAttachmentId(null);
+    }
+  };
+
   if (loading) return <Loader />;
   if (!task) return <div className="p-8 text-center text-red-500 font-bold">Task not found.</div>;
 
@@ -110,7 +184,7 @@ const TaskDetails = () => {
           <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
           Back to Projects
         </button>
-        <button className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+        <button aria-label="Task actions" className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
           <MoreHorizontal className="w-6 h-6 text-gray-400" />
         </button>
       </div>
@@ -195,14 +269,100 @@ const TaskDetails = () => {
           </div>
 
           <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-            <h3 className="text-xl font-black text-gray-900 mb-6 flex items-center">
-              <Paperclip className="w-5 h-5 mr-2 text-primary" />
-              Attachments
-            </h3>
-            <div className="p-10 border-2 border-dashed border-gray-100 rounded-3xl text-center">
-               <p className="text-gray-400 font-medium">No files attached to this task.</p>
-               <button className="mt-4 text-xs font-black text-primary hover:underline">Upload Document</button>
+            <input
+              ref={attachmentInputRef}
+              type="file"
+              className="hidden"
+              onChange={handleFileSelection}
+              aria-label="Choose attachment file"
+            />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <h3 className="text-xl font-black text-gray-900 flex items-center">
+                <Paperclip className="w-5 h-5 mr-2 text-primary" />
+                Attachments
+              </h3>
+              {canUploadAttachment && (
+                <button
+                  type="button"
+                  onClick={handleUploadClick}
+                  disabled={uploading}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-primary text-white text-sm font-black hover:bg-primary/90 disabled:opacity-50"
+                >
+                  <DownloadCloud className="w-4 h-4" />
+                  {uploading ? 'Uploading...' : 'Upload Document'}
+                </button>
+              )}
             </div>
+
+            {canViewAttachments ? (
+              <div className="space-y-4">
+                {attachmentsLoading ? (
+                  <div className="text-center text-sm text-gray-500">Loading attachments...</div>
+                ) : attachments.length > 0 ? (
+                  <div className="space-y-3">
+                    {attachments.map((attachment) => {
+                      const uploader =
+                        typeof attachment.uploadedBy === 'string'
+                          ? attachment.uploadedBy
+                          : attachment.uploadedBy?.name || attachment.uploadedBy?.email || 'Unknown user';
+
+                      return (
+                        <div
+                          key={attachment._id}
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-slate-50 rounded-3xl border border-gray-100"
+                        >
+                          <div className="min-w-0">
+                            <a
+                              href={attachment.fileUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-sm font-bold text-primary hover:underline"
+                            >
+                              {attachment.fileName}
+                            </a>
+                            <p className="text-xs text-gray-400 mt-1 truncate">
+                              Uploaded by {uploader} • {formatDate(attachment.createdAt)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {canDeleteAttachment && (
+                              <button
+                                onClick={() => handleDeleteAttachment(attachment._id)}
+                                disabled={deletingAttachmentId === attachment._id}
+                                className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-2xl bg-red-50 text-red-700 text-xs font-bold border border-red-100 hover:bg-red-100 disabled:opacity-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-10 border-2 border-dashed border-gray-100 rounded-3xl text-center">
+                    <p className="text-gray-400 font-medium">No files attached to this task.</p>
+                    {canUploadAttachment ? (
+                      <button
+                        type="button"
+                        onClick={handleUploadClick}
+                        disabled={uploading}
+                        className="mt-4 text-xs font-black text-primary hover:underline"
+                      >
+                        {uploading ? 'Uploading...' : 'Upload Document'}
+                      </button>
+                    ) : (
+                      <p className="text-xs text-gray-400 mt-3">You do not have permission to upload attachments.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="p-10 border-2 border-dashed border-gray-100 rounded-3xl text-center">
+                <p className="text-gray-500 font-medium">You do not have permission to view attachments.</p>
+              </div>
+            )}
           </div>
         </div>
 

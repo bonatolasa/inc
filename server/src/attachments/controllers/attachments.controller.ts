@@ -182,10 +182,6 @@ export class AttachmentsController {
     };
   }
 
-  @authorize({
-    permissions: [Permissions.ATTACHMENTS_VIEW],
-    roles: [Role.TEAM_MEMBER, Role.TESTER, Role.PROJECT_MANAGER],
-  })
   @Get('uploads/:filename')
   async serveUpload(@Param('filename') filename: string, @Res() res: any) {
     const filePath = join(process.cwd(), 'uploads', filename);
