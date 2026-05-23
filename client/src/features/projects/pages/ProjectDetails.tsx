@@ -8,6 +8,7 @@ import { User } from '../../../types/user.types';
 import { Loader, Modal, Can } from '../../../common/components';
 import { PERMISSIONS } from '../../../config/permissions.config';
 import { FolderKanban, Calendar, ArrowLeft, CheckCircle2, PlusCircle, Settings, Info, Users, Edit3, Trash2 } from 'lucide-react';
+import { useAuth } from '../../../hooks/useAuth';
 import { getStatusColor, formatDate } from '../../../utils/formatters';
 import { usePermission } from '../../../hooks/usePermission';
 
@@ -175,6 +176,8 @@ const ProjectDetails = () => {
   if (!project) return <div className="p-8 text-center text-red-500 font-bold">Project not found.</div>;
 
   const teamMembers = (project.team as any)?.members || [];
+  const { user } = useAuth();
+  const currentUserId = (user?._id || (user as any)?.id || '').toString();
 
   return (
     <div className="space-y-8">
@@ -277,9 +280,13 @@ const ProjectDetails = () => {
                            </button>
                        </Can>
                        <Can roles={['team_member']}>
-                           <button onClick={(e) => { e.stopPropagation(); handleOpenEditTask(task); }} className="px-3 py-1.5 text-xs font-bold text-primary bg-blue-50 hover:bg-blue-100 rounded-lg transition-all">
-                               Update Progress
-                           </button>
+                           {Array.isArray(task.assignedTo) && (task.assignedTo as any[]).some((a: any) => (typeof a === 'string' ? a : a._id) === currentUserId) ? (
+                             <button onClick={(e) => { e.stopPropagation(); handleOpenEditTask(task); }} className="px-3 py-1.5 text-xs font-bold text-primary bg-blue-50 hover:bg-blue-100 rounded-lg transition-all">
+                                 Update Progress
+                             </button>
+                           ) : (
+                             <button className="px-3 py-1.5 text-xs font-bold text-gray-400 bg-gray-50 rounded-lg cursor-not-allowed" title="Not assigned to this task">Update Progress</button>
+                           )}
                        </Can>
                        <Can permissions={[PERMISSIONS.TASKS_DELETE]}>
                           <button onClick={(e) => { e.stopPropagation(); handleDeleteTask(task._id); }} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-white rounded-lg">

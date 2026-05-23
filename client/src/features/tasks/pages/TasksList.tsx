@@ -206,6 +206,12 @@ const TasksList = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editMode && currentTaskId && isTeamMember) {
+      // prevent team members from updating progress on tasks not assigned to them
+      if (!formData.assignedTo.includes(currentUserId)) {
+        alert('You are not assigned to this task and cannot update its progress.');
+        return;
+      }
+
       setIsSubmitting(true);
       try {
         await taskService.updateTaskProgress(currentTaskId, formData.percentageComplete);
@@ -238,9 +244,9 @@ const TasksList = () => {
     setIsSubmitting(true);
     try {
       if (editMode && currentTaskId) {
-        await taskService.updateTask(currentTaskId, taskPayload);
+        await taskService.updateTask(currentTaskId, taskPayload as any);
       } else {
-        await taskService.createTask(taskPayload);
+        await taskService.createTask(taskPayload as any);
       }
       setIsModalOpen(false);
       await fetchData();

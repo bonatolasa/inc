@@ -7,6 +7,7 @@ import { Clock, AlertCircle, ChevronRight, Edit3, Trash2 } from 'lucide-react';
 import { Can } from '../../../common/components';
 import { PERMISSIONS } from '../../../config/permissions.config';
 import { usePermission } from '../../../hooks/usePermission';
+import { useAuth } from '../../../hooks/useAuth';
 
 interface TaskCardProps {
   task: Task;
@@ -28,6 +29,9 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) => {
   const { hasRole } = usePermission();
   const isTeamMember = hasRole('team_member');
   const assignees = Array.isArray(task.assignedTo) ? (task.assignedTo as any[]) : [];
+  const { user } = useAuth();
+  const currentUserId = (user?._id || (user as any)?.id || '').toString();
+  const isAssignee = assignees.some((a: any) => (typeof a === 'string' ? a : a._id) === currentUserId);
 
   return (
     <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-100 group">
@@ -71,12 +75,18 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) => {
         <div className="flex items-center space-x-1">
           <Can permissions={[PERMISSIONS.TASKS_UPDATE]}>
             {isTeamMember ? (
-              <button
-                onClick={() => onEdit?.(task)}
-                className="px-3 py-1.5 text-xs font-bold text-primary bg-blue-50 hover:bg-blue-100 rounded-lg transition-all"
-              >
-                Update Progress
-              </button>
+              isAssignee ? (
+                <button
+                  onClick={() => onEdit?.(task)}
+                  className="px-3 py-1.5 text-xs font-bold text-primary bg-blue-50 hover:bg-blue-100 rounded-lg transition-all"
+                >
+                  Update Progress
+                </button>
+              ) : (
+                <button className="px-3 py-1.5 text-xs font-bold text-gray-400 bg-gray-50 rounded-lg cursor-not-allowed" title="Not assigned to this task">
+                  Update Progress
+                </button>
+              )
             ) : (
               <button
                 onClick={() => onEdit?.(task)}
