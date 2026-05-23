@@ -224,20 +224,23 @@ const TasksList = () => {
       return;
     }
 
+    const taskPayload = {
+      title: formData.title,
+      description: formData.description || undefined,
+      project: formData.projectId,
+      assignedTo: formData.assignedTo,
+      status: formData.status,
+      priority: formData.priority,
+      dueDate: new Date(formData.dueDate),
+      percentageComplete: formData.percentageComplete,
+    };
+
     setIsSubmitting(true);
     try {
       if (editMode && currentTaskId) {
-        await taskService.updateTask(currentTaskId, {
-            ...formData,
-            project: formData.projectId as any,
-            assignedTo: formData.assignedTo as any
-        } as any);
+        await taskService.updateTask(currentTaskId, taskPayload);
       } else {
-        await taskService.createTask({
-            ...formData,
-            project: formData.projectId as any,
-            assignedTo: formData.assignedTo as any
-        } as any);
+        await taskService.createTask(taskPayload);
       }
       setIsModalOpen(false);
       await fetchData();
@@ -274,7 +277,7 @@ const TasksList = () => {
             <LayoutGrid className="w-8 h-8 mr-3 text-primary" />
             Task Management Board
           </h1>
-          <p className="text-gray-500 font-medium mt-1">Full lifecycle oversight for operational deliverables.</p>
+          <p className="text-gray-500 font-medium mt-1">Full lifecycle oversight for task deliverables.</p>
         </div>
         <Can permissions={[PERMISSIONS.TASKS_CREATE]}>
           <button 
@@ -282,7 +285,7 @@ const TasksList = () => {
             className="bg-primary text-white px-8 py-3 rounded-2xl font-black shadow-lg shadow-primary/20 hover:bg-blue-600 transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center"
           >
             <PlusCircle className="w-5 h-5 mr-2" />
-            New Operation
+            Add Task
           </button>
         </Can>
       </div>
@@ -325,7 +328,7 @@ const TasksList = () => {
               <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                  <AlertCircle className="w-8 h-8 text-gray-300" />
               </div>
-              <h2 className="text-xl font-bold text-gray-900">No operations active.</h2>
+              <h2 className="text-xl font-bold text-gray-900">No tasks active.</h2>
             </div>
           )}
         </div>
@@ -362,7 +365,7 @@ const TasksList = () => {
         </div>
       )}
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editMode ? (isTeamMember ? 'Update Progress' : 'Modify Mission Parameters') : 'Deploy New Operation'}>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editMode ? (isTeamMember ? 'Update Progress' : 'Modify Task Parameters') : 'Create Project Task'}>
         <form onSubmit={handleSubmit} className="space-y-6">
           {editMode && isTeamMember ? (
             <div>
@@ -381,8 +384,15 @@ const TasksList = () => {
             </div>
           ) : (
             <>
+              <div className="bg-blue-50/50 p-4 rounded-xl flex items-start space-x-3 border border-blue-100 mb-2">
+                <Info className="w-5 h-5 text-primary mt-0.5" />
+                <p className="text-xs font-bold text-blue-700 leading-relaxed">
+                  Tasks can only be assigned to members of the selected project team. Select a project first, then assign one or more team members.
+                </p>
+              </div>
+
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Mission Identifier</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Task Title</label>
             <input 
               type="text" required
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-gray-900 bg-gray-50/30"
@@ -391,17 +401,28 @@ const TasksList = () => {
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Task Description</label>
+            <textarea
+              rows={3}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium text-gray-900 bg-gray-50/30 resize-none"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Describe the task, goals, or acceptance criteria"
+            />
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Target Project</label>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Select Project</label>
                 <select 
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary bg-gray-50 font-bold text-gray-700 outline-none"
                     value={formData.projectId}
                     onChange={(e) => setFormData({...formData, projectId: e.target.value})}
                     required
-                    disabled={editMode} // Project shouldn't change once initialized
+                    disabled={editMode}
                 >
-                    <option value="">Select Scope</option>
+                    <option value="">Select Project</option>
                     {projects.map(p => (
                     <option key={p._id} value={p._id}>{p.name}</option>
                     ))}
@@ -416,7 +437,6 @@ const TasksList = () => {
                 >
                     <option value="pending">Pending</option>
                     <option value="in_progress">In Progress</option>
-                    <option value="in_review">In Review</option>
                     <option value="completed">Completed</option>
                     <option value="blocked">Blocked</option>
                 </select>
@@ -425,7 +445,7 @@ const TasksList = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Priority</label>
+              <label className="block text-sm font-bold text-gray-700 mb-1 capitalize">Priority</label>
               <select className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary bg-gray-50 font-bold text-gray-700 outline-none"
                 value={formData.priority} onChange={(e) => setFormData({...formData, priority: e.target.value as any})}>
                 <option value="low">Low</option>
@@ -435,7 +455,7 @@ const TasksList = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Deadline</label>
+              <label className="block text-sm font-bold text-gray-700 mb-1 capitalize">Due Date</label>
               <input type="date" required className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary bg-gray-50 font-bold text-gray-700 outline-none"
                 value={formData.dueDate} onChange={(e) => setFormData({...formData, dueDate: e.target.value})} />
             </div>
@@ -453,40 +473,38 @@ const TasksList = () => {
           )}
 
           <div>
-             <label className="block text-sm font-bold text-gray-700 mb-3 flex items-center">
-               <Users className="w-4 h-4 mr-2" /> Assign Specialists
+             <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center">
+               <Users className="w-4 h-4 mr-2" /> Assign Team Member
              </label>
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                {filteredMembers.map((member: User) => (
-                <button
-                    key={member._id} type="button"
-                    onClick={() => handleToggleAssignee(member._id)}
-                    className={`flex items-center p-3 rounded-xl border-2 transition-all text-left ${
-                    formData.assignedTo.includes(member._id)
-                        ? 'border-primary bg-blue-50 text-primary'
-                        : 'border-gray-50 bg-gray-50 text-gray-500 hover:border-gray-200'
-                    }`}
-                >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 font-bold text-xs ${
-                    formData.assignedTo.includes(member._id) ? 'bg-primary text-white' : 'bg-white border text-gray-400'
-                    }`}>
-                    {member.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="overflow-hidden">
-                        <p className="text-xs font-black truncate">{member.name}</p>
-                        <p className="text-[10px] font-medium opacity-60 truncate">{member.email}</p>
-                    </div>
-                </button>
-                ))}
-             </div>
+             <select
+               value={formData.assignedTo[0] || ''}
+               onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value ? [e.target.value] : [] })}
+               disabled={!formData.projectId || filteredMembers.length === 0}
+               required
+               className="w-full rounded-2xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+             >
+               <option value="" disabled>
+                 {filteredMembers.length === 0 ? 'Select a project to load members' : 'Select a team member'}
+               </option>
+               {filteredMembers.map((member: User) => (
+                 <option key={member._id} value={member._id}>
+                   {member.name} — {member.email}
+                 </option>
+               ))}
+             </select>
+             {!formData.projectId && (
+               <p className="mt-2 rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                 Select a project first to load its team members.
+               </p>
+             )}
           </div>
             </>
           )}
 
-          <div className="flex space-x-3 pt-2">
-            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-6 py-4 rounded-2xl font-black text-gray-500 hover:bg-gray-100 transition-all">Cancel</button>
-            <button type="submit" disabled={isSubmitting} className="flex-1 bg-primary text-white py-4 rounded-2xl font-black shadow-lg shadow-primary/20 hover:bg-blue-600 transition-all disabled:opacity-50">
-              {isSubmitting ? 'Processing...' : (editMode ? (isTeamMember ? 'Update Progress' : 'Commit Changes') : 'Initialize Operation')}
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="w-full sm:flex-1 px-6 py-4 rounded-2xl font-black text-gray-500 hover:bg-gray-100 transition-all">Cancel</button>
+            <button type="submit" disabled={isSubmitting} className="w-full sm:flex-1 bg-primary text-white py-4 rounded-2xl font-black shadow-lg shadow-primary/20 hover:bg-blue-600 transition-all disabled:opacity-50">
+              {isSubmitting ? 'Processing...' : (editMode ? (isTeamMember ? 'Update Progress' : 'Commit Changes') : 'Initialize Task')}
             </button>
           </div>
         </form>
