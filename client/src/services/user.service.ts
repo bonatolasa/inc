@@ -24,9 +24,21 @@ export const userService = {
     return response.data;
   },
 
-  getAllUsers: async (page = 1, limit = 10): Promise<PaginatedUsersResponse> => {
+  getAllUsers: async (
+    page = 1,
+    limit = 10,
+    filters?: { name?: string; role?: string }
+  ): Promise<PaginatedUsersResponse> => {
+    const params: any = { page, limit };
+    if (filters) {
+      const nameValue = filters.name?.trim();
+      const roleValue = filters.role?.trim().toLowerCase().replace(/\s+/g, '_');
+      if (nameValue) params.name = nameValue;
+      if (roleValue && roleValue !== 'all') params.role = roleValue;
+    }
+
     const response = await api.get(API_ENDPOINTS.USERS.BASE, {
-      params: { page, limit },
+      params,
     });
     return response.data;
   },

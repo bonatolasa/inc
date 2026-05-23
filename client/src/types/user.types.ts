@@ -13,6 +13,8 @@ export interface User {
   roles: string[] | Role[];
   permissions?: string[];  // Direct user permissions (hybrid RBAC)
   isActive?: boolean;
+  phone?: string;
+  avatar?: string;
   createdAt?: string;
   updatedAt?: string;
 }
