@@ -30,21 +30,21 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) => {
   const assignees = Array.isArray(task.assignedTo) ? (task.assignedTo as any[]) : [];
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-100 group">
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex flex-col gap-2 min-w-0 flex-1 pr-2">
+    <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-100 group">
+      <div className="flex justify-between items-start gap-3 mb-3">
+        <div className="flex flex-col gap-1 min-w-0 flex-1 pr-2">
           <span className={`text-[10px] font-black uppercase tracking-wider ${getPriorityColor(task.priority)} flex items-center bg-slate-50 px-2 py-1 rounded-md border border-gray-100 w-max`}>
             {task.priority === 'critical' && <AlertCircle className="w-3 h-3 mr-1" />}
             {task.priority} Priority
           </span>
-          <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary transition-colors line-clamp-2">{task.title}</h3>
+          <h3 className="font-bold text-base text-gray-900 group-hover:text-primary transition-colors line-clamp-2">{task.title}</h3>
         </div>
-        <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide flex-shrink-0 ${getStatusColor(task.status).replace('bg-', 'bg-opacity-20 bg-')}`}>
+        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide flex-shrink-0 ${getStatusColor(task.status).replace('bg-', 'bg-opacity-20 bg-')}`}>
           {task.status.replace('_', ' ')}
         </span>
       </div>
       
-      <div className="flex items-center justify-between mb-4 mt-2 pr-1">
+      <div className="flex items-center justify-between mb-3 mt-1 pr-1 text-xs text-gray-500">
         <div className="flex -space-x-2">
             {assignees.slice(0, 3).map((u, i) => {
                 const name = typeof u === 'string' ? `User ${u.slice(-4)}` : (u?.name || `User ${(u?._id || '').toString().slice(-4)}`);
