@@ -118,11 +118,44 @@ export class UsersService {
   }
 
   //Get all users with team name populated (with pagination)
-  async getAllUsers(page: number = 1, limit: number = 10): Promise<{ users: UserResponseDto[]; total: number }> {
+  async getAllUsers(
+    page: number = 1,
+    limit: number = 10,
+    filters?: { name?: string; role?: string },
+  ): Promise<{ users: UserResponseDto[]; total: number }> {
     const skip = (page - 1) * limit;
+    const query: any = {};
+    const filterClauses: any[] = [];
+
+    const nameFilter = filters?.name?.trim();
+    const roleFilter = filters?.role?.trim().toLowerCase().replace(/\s+/g, '_');
+
+    if (nameFilter) {
+      const regex = { $regex: nameFilter, $options: 'i' };
+      filterClauses.push({
+        $or: [
+          { name: regex },
+          { email: regex },
+        ],
+      });
+    }
+
+    if (roleFilter && roleFilter !== 'all') {
+      filterClauses.push({
+        $or: [
+          { roles: roleFilter },
+          { 'roles.name': roleFilter },
+        ],
+      });
+    }
+
+    if (filterClauses.length > 0) {
+      query.$and = filterClauses;
+    }
+
     const [users, total] = await Promise.all([
-      this.userModel.find().populate('team', 'name').skip(skip).limit(limit).exec(),
-      this.userModel.countDocuments(),
+      this.userModel.find(query).populate('team', 'name').skip(skip).limit(limit).exec(),
+      this.userModel.countDocuments(query),
     ]);
 
     return {

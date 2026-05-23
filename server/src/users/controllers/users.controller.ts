@@ -120,10 +120,15 @@ export class UsersController {
   async getAllUsers(
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
+    @Query('name') name?: string,
+    @Query('role') role?: string,
   ): Promise<UserListResponseDto> {
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 10;
-    const { users, total } = await this.usersService.getAllUsers(pageNum, limitNum);
+    const { users, total } = await this.usersService.getAllUsers(pageNum, limitNum, {
+      name: name?.trim() || undefined,
+      role: role?.trim() || undefined,
+    });
     return {
       success: true,
       data: users,
