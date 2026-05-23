@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { userService } from '../../../services/user.service';
 import { roleService } from '../../../services/role.service';
 import { User, Role } from '../../../types/user.types';
@@ -14,6 +14,8 @@ const UsersList = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [searchName, setSearchName] = useState('');
+  const [filterRole, setFilterRole] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -24,12 +26,38 @@ const UsersList = () => {
     role: 'team_member'
   });
 
-  const totalPages = Math.max(1, Math.ceil(totalUsers / limit));
+  const filteredUsers = useMemo(() => {
+    return users.filter((user) => {
+      const nameMatch = searchName.trim()
+        ? [user.name, user.email]
+            .filter(Boolean)
+            .some((value) => value.toLowerCase().includes(searchName.trim().toLowerCase()))
+        : true;
 
-  const fetchData = async (targetPage: number = page) => {
+      const roleMatch = filterRole !== 'all'
+        ? (user.roles || []).some((role) => {
+            const roleName = typeof role === 'string' ? role : role.name;
+            return roleName?.toLowerCase() === filterRole.toLowerCase();
+          })
+        : true;
+
+      return nameMatch && roleMatch;
+    });
+  }, [users, searchName, filterRole]);
+
+  const displayTotalUsers = searchName || filterRole !== 'all' ? filteredUsers.length : totalUsers;
+  const totalPages = Math.max(1, Math.ceil(displayTotalUsers / limit));
+
+  const fetchData = async (
+    targetPage: number = page,
+    filters?: { name?: string; role?: string },
+  ) => {
     setLoading(true);
     try {
-      const usersRes = await userService.getAllUsers(targetPage, limit);
+      const usersRes = await userService.getAllUsers(targetPage, limit, {
+        name: filters?.name ?? (searchName || undefined),
+        role: filters?.role ?? (filterRole !== 'all' ? filterRole : undefined),
+      });
       if (usersRes.success) {
         setUsers(usersRes.data || []);
         setTotalUsers(usersRes.total || usersRes.data?.length || 0);
@@ -58,6 +86,13 @@ const UsersList = () => {
   useEffect(() => {
     fetchData(page);
   }, [page]);
+
+  // Triggered when search or role filter is applied
+  const handleSearch = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setPage(1);
+    fetchData(1, { name: searchName, role: filterRole });
+  };
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,17 +139,56 @@ const UsersList = () => {
         </Can>
       </div>
 
+      {/* Search and filter toolbar */}
+      <form onSubmit={handleSearch} className="flex items-center gap-3">
+        <input
+          type="text"
+          placeholder="Search by name"
+          className="flex-1 px-4 py-2 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+          value={searchName}
+          onChange={(e) => setSearchName(e.target.value)}
+        />
+        <select
+          value={filterRole}
+          onChange={(e) => {
+            const selectedRole = e.target.value;
+            setFilterRole(selectedRole);
+            setPage(1);
+            fetchData(1, { name: searchName, role: selectedRole });
+          }}
+          className="px-4 py-2 rounded-xl border border-gray-200 bg-white"
+        >
+          <option value="all">All roles</option>
+          {roles.map((r) => (
+            <option key={r._id} value={r.name}>{getRoleDisplayName(r)}</option>
+          ))}
+        </select>
+        <button type="submit" className="px-4 py-2 rounded-xl bg-primary text-white font-bold">Search</button>
+        <button
+          type="button"
+          onClick={() => {
+            setSearchName('');
+            setFilterRole('all');
+            setPage(1);
+            fetchData(1, { name: '', role: 'all' });
+          }}
+          className="px-4 py-2 rounded-xl border border-gray-200"
+        >
+          Clear
+        </button>
+      </form>
+
       {loading ? (
         <Loader />
       ) : (
         <>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border overflow-hidden">
-            <UserTable users={users} roles={roles} onRefresh={() => fetchData(page)} />
+            <UserTable users={filteredUsers} roles={roles} onRefresh={() => fetchData(page)} />
           </div>
 
           <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-gray-100">
             <p className="text-sm text-gray-600 font-medium">
-              Showing page {page} of {totalPages} ({totalUsers} users)
+              Showing page {page} of {totalPages} ({displayTotalUsers} users)
             </p>
             <div className="flex items-center gap-2">
               <button
