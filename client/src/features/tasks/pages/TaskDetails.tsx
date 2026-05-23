@@ -7,6 +7,7 @@ import { Attachment } from '../../../types/attachment.types';
 import { Loader } from '../../../common/components';
 import { usePermission } from '../../../hooks/usePermission';
 import { PERMISSIONS } from '../../../config/permissions.config';
+import { API_BASE_URL } from '../../../config/api.config';
 import { Clock, AlertCircle, ArrowLeft, MoreHorizontal, Paperclip, Users, FolderKanban, DownloadCloud, Trash2 } from 'lucide-react';
 import { getStatusColor, formatDate } from '../../../utils/formatters';
 
@@ -155,6 +156,14 @@ const TaskDetails = () => {
       alert('Failed to delete attachment.');
     } finally {
       setDeletingAttachmentId(null);
+    }
+  };
+
+  const getAttachmentHref = (attachment: Attachment) => {
+    try {
+      return new URL(attachment.fileUrl, API_BASE_URL).toString();
+    } catch {
+      return attachment.fileUrl;
     }
   };
 
@@ -313,7 +322,7 @@ const TaskDetails = () => {
                         >
                           <div className="min-w-0">
                             <a
-                              href={attachment.fileUrl}
+                              href={getAttachmentHref(attachment)}
                               target="_blank"
                               rel="noreferrer"
                               className="text-sm font-bold text-primary hover:underline"
