@@ -206,7 +206,7 @@ const ProjectDetails = () => {
                      className="flex items-center bg-blue-50 text-primary px-6 py-2.5 rounded-xl font-bold hover:bg-primary hover:text-white transition-all"
                  >
                      <Settings className="w-4 h-4 mr-2" />
-                     Settings
+                     Edit
                  </button>
              </Can>
              <Can roles={['super_admin', 'admin', 'project_manager']} permissions={[PERMISSIONS.TASKS_CREATE]}>
@@ -271,7 +271,7 @@ const ProjectDetails = () => {
               </div>
               <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2 mr-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                       <Can roles={['admin', 'super_admin', 'project_manager']}>
+                       <Can permissions={[PERMISSIONS.TASKS_UPDATE]}>
                            <button onClick={(e) => { e.stopPropagation(); handleOpenEditTask(task); }} className="p-1.5 text-gray-400 hover:text-primary hover:bg-white rounded-lg">
                                <Edit3 className="w-4 h-4" />
                            </button>
@@ -281,7 +281,7 @@ const ProjectDetails = () => {
                                Update Progress
                            </button>
                        </Can>
-                       <Can roles={['admin', 'super_admin', 'project_manager']}>
+                       <Can permissions={[PERMISSIONS.TASKS_DELETE]}>
                           <button onClick={(e) => { e.stopPropagation(); handleDeleteTask(task._id); }} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-white rounded-lg">
                               <Trash2 className="w-4 h-4" />
                           </button>
