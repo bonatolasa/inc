@@ -7,17 +7,12 @@ export class InvitationEmailService {
   private readonly logger = new Logger(InvitationEmailService.name);
 
   private transporter: nodemailer.Transporter | null = null;
-  private smtpConfigured = true;
 
   constructor(private readonly configService: ConfigService) {}
 
   private getTransporter(): nodemailer.Transporter | null {
     if (this.transporter) {
       return this.transporter;
-    }
-
-    if (!this.smtpConfigured) {
-      return null;
     }
 
     const host = this.configService.get<string>('SMTP_HOST');
@@ -43,7 +38,6 @@ export class InvitationEmailService {
     );
 
     if (!host || !user || !pass) {
-      this.smtpConfigured = false;
       return null;
     }
 
