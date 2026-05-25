@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { API_BASE_URL, API_DEPLOYED } from '../config/api.config';
 
-const LOCAL_API_TIMEOUT_MS = 2500;
+const LOCAL_API_TIMEOUT_MS = 10000;
 const DEPLOYED_API_TIMEOUT_MS = 15000;
 
 const api = axios.create({

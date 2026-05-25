@@ -55,7 +55,10 @@ export class UsersService {
     return this.mapToResponseDto(savedUser);
   }
 
-  async inviteUser(inviteUserDto: InviteUserDto): Promise<{ user: UserResponseDto; emailSent: boolean }> {
+  async inviteUser(
+    inviteUserDto: InviteUserDto,
+    origin?: string,
+  ): Promise<{ user: UserResponseDto; emailSent: boolean }> {
     const normalizedEmail = inviteUserDto.email.toLowerCase();
     const existingUser = await this.userModel.findOne({ email: normalizedEmail });
 
@@ -66,7 +69,15 @@ export class UsersService {
     const rawToken = randomBytes(32).toString('hex');
     const invitationTokenHash = createHash('sha256').update(rawToken).digest('hex');
     const invitationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    const inviteBaseUrl = process.env.INVITE_BASE_URL || 'http://localhost:5173/accept-invite';
+    
+    let inviteBaseUrl = '';
+    if (origin) {
+      const cleanOrigin = origin.endsWith('/') ? origin.slice(0, -1) : origin;
+      inviteBaseUrl = `${cleanOrigin}/accept-invite`;
+    } else {
+      inviteBaseUrl = process.env.INVITE_BASE_URL || 'http://localhost:5173/accept-invite';
+    }
+    
     const inviteLink = `${inviteBaseUrl}?token=${encodeURIComponent(rawToken)}`;
 
     const roles = inviteUserDto.role

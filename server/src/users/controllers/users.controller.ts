@@ -103,8 +103,18 @@ export class UsersController {
   @Post('invite')
   async inviteUser(
     @Body() inviteUserDto: InviteUserDto,
+    @Req() req: any,
   ): Promise<SingleUserResponseDto & { inviteEmailSent: boolean }> {
-    const { user, emailSent } = await this.usersService.inviteUser(inviteUserDto);
+    let origin = req.headers.origin;
+    if (!origin && req.headers.referer) {
+      try {
+        const refererUrl = new URL(req.headers.referer);
+        origin = refererUrl.origin;
+      } catch (e) {
+        // ignore
+      }
+    }
+    const { user, emailSent } = await this.usersService.inviteUser(inviteUserDto, origin);
     return {
       success: true,
       data: user,

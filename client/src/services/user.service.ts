@@ -49,7 +49,9 @@ export const userService = {
   },
 
   inviteUser: async (data: any): Promise<InviteUserResponse> => {
-    const response = await api.post(API_ENDPOINTS.USERS.INVITE, data);
+    const response = await api.post(API_ENDPOINTS.USERS.INVITE, data, {
+      timeout: 15000,
+    });
     return response.data;
   },
 

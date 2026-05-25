@@ -6,15 +6,24 @@ import * as nodemailer from 'nodemailer';
 export class InvitationEmailService {
   private readonly logger = new Logger(InvitationEmailService.name);
 
+  private transporter: nodemailer.Transporter | null = null;
+  private smtpConfigured = true;
+
   constructor(private readonly configService: ConfigService) {}
 
-  async sendInviteEmail(email: string, name: string, inviteLink: string): Promise<boolean> {
+  private getTransporter(): nodemailer.Transporter | null {
+    if (this.transporter) {
+      return this.transporter;
+    }
+
+    if (!this.smtpConfigured) {
+      return null;
+    }
+
     const host = this.configService.get<string>('SMTP_HOST');
     const port = Number(this.configService.get<number>('SMTP_PORT') ?? 587);
     const user = this.configService.get<string>('SMTP_USER');
     const pass = this.configService.get<string>('SMTP_PASS');
-    const from =
-      this.configService.get<string>('SMTP_FROM') || user || 'no-reply@example.com';
     const secure =
       this.configService.get<string>('SMTP_SECURE') === 'true' || port === 465;
     const requireTLS =
@@ -34,10 +43,8 @@ export class InvitationEmailService {
     );
 
     if (!host || !user || !pass) {
-      this.logger.warn(
-        `SMTP is not configured in .env. Invite email not sent to ${email}. Activation link: ${inviteLink}`,
-      );
-      return false;
+      this.smtpConfigured = false;
+      return null;
     }
 
     try {
@@ -59,10 +66,29 @@ export class InvitationEmailService {
         transporterOptions.authMethod = authMethod;
       }
 
-      const transporter = nodemailer.createTransport(transporterOptions);
+      this.transporter = nodemailer.createTransport(transporterOptions);
+      return this.transporter;
+    } catch (error: any) {
+      this.logger.error(`Failed to initialize SMTP transporter: ${error?.message || 'unknown error'}`);
+      return null;
+    }
+  }
 
-      await transporter.verify();
+  async sendInviteEmail(email: string, name: string, inviteLink: string): Promise<boolean> {
+    const transporter = this.getTransporter();
 
+    if (!transporter) {
+      this.logger.warn(
+        `SMTP is not configured in .env. Invite email not sent to ${email}. Activation link: ${inviteLink}`,
+      );
+      return false;
+    }
+
+    const user = this.configService.get<string>('SMTP_USER');
+    const from =
+      this.configService.get<string>('SMTP_FROM') || user || 'no-reply@example.com';
+
+    try {
       await transporter.sendMail({
         from,
         to: email,
