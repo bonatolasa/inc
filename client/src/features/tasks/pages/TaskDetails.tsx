@@ -7,7 +7,7 @@ import { Attachment } from '../../../types/attachment.types';
 import { Loader } from '../../../common/components';
 import { usePermission } from '../../../hooks/usePermission';
 import { PERMISSIONS } from '../../../config/permissions.config';
-import { API_BASE_URL } from '../../../config/api.config';
+import api from '../../../services/api';
 import { Clock, AlertCircle, ArrowLeft, MoreHorizontal, Paperclip, Users, FolderKanban, DownloadCloud, Trash2 } from 'lucide-react';
 import { getStatusColor, formatDate } from '../../../utils/formatters';
 
@@ -161,7 +161,7 @@ const TaskDetails = () => {
 
   const getAttachmentHref = (attachment: Attachment) => {
     try {
-      return new URL(attachment.fileUrl, API_BASE_URL).toString();
+      return new URL(attachment.fileUrl, api.defaults.baseURL).toString();
     } catch {
       return attachment.fileUrl;
     }
